@@ -8,10 +8,10 @@
 
 // this is only used for testing!
 export class MockLocalStorage {
-  private data: { [key: string]: string } = {};
+  private data: Partial<{ [key: string]: string }> = {};
   private size: number;
 
-  constructor(size = 10) {
+  constructor(size = 1000) {
     this.size = size;
   }
 
@@ -25,8 +25,8 @@ export class MockLocalStorage {
     this.data = {};
   }
 
-  public getItem(key: string): string {
-    return this.data[key];
+  public getItem(key: string): string | null {
+    return this.data[key] ?? null;
   }
 
   public setItem(key: string, val: string): void {

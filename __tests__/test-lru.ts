@@ -150,3 +150,11 @@ test('clearing', () => {
   LS.clear();
   expect(LS.get('foo')).toBe(null);
 });
+
+test('use main implementation', () => {
+  expect(LS.getLocalStorage()).toBe(window.localStorage);
+});
+
+test('localStorageTest', () => {
+  expect(LocalStorageLRU.testLocalStorage(LS.getLocalStorage())).toBe(true);
+});

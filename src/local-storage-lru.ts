@@ -4,12 +4,15 @@
  * Licensed under the Apache License, Version 2.0
  */
 
+import { MockLocalStorage } from './mock-ls';
+
 interface Props {
   maxSize?: number; // how many most recently used keys are tracked
   isCandidate?: (key: string, recent: string[]) => boolean;
   recentKey?: string; // the key used to store the list of recently used keys
   delimiter?: string; // the delimiter used to separate keys in the recent list – default \0
   localStorage?: typeof window.localStorage; // only used for testing
+  fallback?: boolean; // if true, use a memory-backed object to store the data
 }
 
 /**
@@ -31,6 +34,10 @@ export class LocalStorageLRU {
     this.recentKey = props?.recentKey ?? '__recent';
     this.delimiter = props?.delimiter ?? '\0';
     this.ls = props?.localStorage ?? window.localStorage;
+    const fallback = props?.fallback ?? false;
+    if (fallback && !LocalStorageLRU.testLocalStorage(this.ls)) {
+      this.ls = new MockLocalStorage(1000);
+    }
   }
 
   /**
@@ -190,14 +197,22 @@ export class LocalStorageLRU {
    * Returns true, if we can store something in local storage at all.
    */
   public localStorageWorks(): boolean {
+    return LocalStorageLRU.testLocalStorage(this.ls);
+  }
+
+  public static testLocalStorage(ls: {
+    getItem: (key: string) => string | null;
+    setItem: (k: string, v: string) => void;
+    removeItem: (k: string) => void;
+  }): boolean {
     try {
       const TEST = '__test__';
       const timestamp = `${Date.now()}`;
-      this.ls.setItem(TEST, timestamp);
-      if (this.ls.getItem(TEST) !== timestamp) {
+      ls.setItem(TEST, timestamp);
+      if (ls.getItem(TEST) !== timestamp) {
         throw new Error('localStorage: test failed');
       }
-      this.ls.removeItem(TEST);
+      ls.removeItem(TEST);
       return true;
     } catch (e) {
       return false;
