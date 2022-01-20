@@ -136,7 +136,6 @@ test('mockup local storage', () => {
   // older ones not
   expect(ls.get('key5')).toBe(undefined);
   expect(ls.getRecent().length).toBe(5);
-  console.log(Object.keys(ls.getLocalStorage()));
   expect(Object.keys(ls.getLocalStorage()).length).toBeLessThanOrEqual(10);
 });
 
