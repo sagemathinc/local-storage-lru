@@ -12,6 +12,12 @@ interface Props {
   localStorage?: typeof window.localStorage; // only used for testing
 }
 
+/**
+ * Use an instance of this class to access localStorage – instead of using it directly.
+ * You will no longer end up with random exceptions upon setting a key/value pair.
+ * Instead, if there is a problem, it will remove a few entries and tries setting the value again.
+ * Recently used entries won't be removed and you can also specify a function to filter potential candidates for deletion.
+ */
 export class LocalStorageLRU {
   private readonly maxSize: number;
   private readonly isCandidate?: (key: string, recent: string[]) => boolean;
@@ -192,6 +198,9 @@ export class LocalStorageLRU {
     }
   }
 
+  /**
+   * number of items stored in the local storage
+   */
   public size(): number {
     try {
       return this.ls.length;
