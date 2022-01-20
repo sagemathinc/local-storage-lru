@@ -128,14 +128,21 @@ test('mockup local storage', () => {
   const myls = new MockLocalStorage(10);
   const ls = new LocalStorageLRU({ localStorage: myls, maxSize: 5 });
   expect(ls.getLocalStorage()).toBe(myls);
-  for (let i = 0; i < 20; i++) {
-    ls.set(`key${i}`, `value${i}`);
+
+  // we have to run this test many times, because recording the usage
+  // of a key could cause it to be deleted before it is recorded.
+  for (let trial = 0; trial < 100; trial++) {
+    myls.clear();
+    for (let i = 0; i < 20; i++) {
+      ls.set(`key${i}`, `value${i}`);
+    }
+    expect(ls.getRecent()).toEqual(['key19', 'key18', 'key17', 'key16', 'key15']);
+    // last one should survive
+    expect(ls.get('key19')).toBe('value19');
+    // older ones not
+    expect(ls.getRecent().length).toBe(4);
+    expect(myls.keys().length).toBeLessThanOrEqual(10);
   }
-  // last one should survive
-  expect(ls.get('key19')).toBe('value19');
-  // older ones not
-  expect(ls.getRecent().length).toBe(4);
-  expect(myls.keys().length).toBeLessThanOrEqual(10);
 });
 
 test('clearing', () => {

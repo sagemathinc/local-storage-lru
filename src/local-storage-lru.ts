@@ -51,6 +51,12 @@ export class LocalStorageLRU {
     if (key.indexOf(this.delimiter) !== -1) {
       throw new Error(`localStorage: Cannot use "${this.delimiter}" as a character in a key`);
     }
+
+    // we have to record the usgae of the key first!
+    // otherwise, setting it first and then updating the list of recent keys
+    // could delete that very key upon updating the list of recently used keys.
+    this.recordUsage(key);
+
     try {
       this.ls.setItem(key, val);
     } catch (e) {
@@ -59,7 +65,6 @@ export class LocalStorageLRU {
         console.warn(`localStorage: set error -- ${e}`);
       }
     }
-    this.recordUsage(key);
   }
 
   /**
@@ -122,7 +127,7 @@ export class LocalStorageLRU {
       try {
         this.ls.setItem(key, val);
         // no error means we were able to set the value
-        console.warn(`localStorage: trimming a few entries worked`);
+        // console.info(`localStorage: trimming a few entries worked`);
         return true;
       } catch (e) {}
     }
@@ -153,6 +158,7 @@ export class LocalStorageLRU {
       }
       num -= 1;
       if (num <= 0) return;
+      if (this.size() === 0) return;
     }
   }
 
