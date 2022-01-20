@@ -42,7 +42,7 @@ export class LocalStorageLRU {
     if (key === this.recentKey) {
       throw new Error(`localStorage: Key "${this.recentKey}" is reserved.`);
     }
-    if (key.indexOf(RECENTLY_DELIM) != -1) {
+    if (key.indexOf(RECENTLY_DELIM) !== -1) {
       throw new Error(`localStorage: Cannot use ${RECENTLY_DELIM} as a character in a key`);
     }
     try {
@@ -78,11 +78,11 @@ export class LocalStorageLRU {
       keys = keys.filter((el) => el !== key);
       // finally, insert the current key at the beginning
       keys.unshift(key);
-      const new_recent_usage = keys.join(RECENTLY_DELIM);
+      const nextRecentUsage = keys.join(RECENTLY_DELIM);
       try {
-        LS[this.recentKey] = new_recent_usage;
+        LS[this.recentKey] = nextRecentUsage;
       } catch {
-        this.trim(this.recentKey, new_recent_usage);
+        this.trim(this.recentKey, nextRecentUsage);
       }
     } catch (e) {
       console.warn(`localStorage: unable to record usage of '${key}' -- ${e}`);
@@ -125,7 +125,7 @@ export class LocalStorageLRU {
 
   // delete a few keys (not recently used and only of a specific type).
   private do_the_trim() {
-    if (this.size() == 0) return;
+    if (this.size() === 0) return;
     // delete a maximum of 10 entries
     let num = Math.min(this.size(), 10);
     const keys = Object.keys(LS);

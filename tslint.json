@@ -1,4 +1,12 @@
 {
-   "extends": ["tslint:recommended", "tslint-config-prettier"]
+  "extends": ["tslint:recommended", "tslint-config-prettier"],
+  "rules": {
+    "no-console": false,
+    "prefer-const": true,
+    "quotemark": false,
+    "radix": false,
+    "semicolon": [true, "always"],
+    "whitespace": [true, "check-operator", "check-typecast", "check-separator"],
+    "no-empty": [true, "allow-empty-catch"]
+  }
 }
-
