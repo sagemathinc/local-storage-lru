@@ -4,27 +4,26 @@
  * Licensed under the Apache License, Version 2.0
  */
 
-// TODO: Move this var and the `delete_local_storage` to a new front-end-misc or something
-// TS rightfully complains about this missing when built on back end systems
 const LS = window.localStorage;
-
-const RECENTLY_DELIM = '\0';
 
 interface Props {
   maxSize?: number; // how many most recently used keys are tracked
   isCandidate?: (key: string, recent: string[]) => boolean;
   recentKey?: string; // the key used to store the list of recently used keys
+  delimiter?: string; // the delimiter used to separate keys in the recent list – default \0
 }
 
 export class LocalStorageLRU {
   private readonly maxSize: number;
   private readonly isCandidate?: (key: string, recent: string[]) => boolean;
   private readonly recentKey: string;
+  private readonly delimiter: string;
 
   constructor(props?: Props) {
     this.maxSize = props?.maxSize ?? 64;
     this.isCandidate = props?.isCandidate;
     this.recentKey = props?.recentKey ?? '__recent';
+    this.delimiter = props?.delimiter ?? '\0';
   }
 
   /**
@@ -42,8 +41,8 @@ export class LocalStorageLRU {
     if (key === this.recentKey) {
       throw new Error(`localStorage: Key "${this.recentKey}" is reserved.`);
     }
-    if (key.indexOf(RECENTLY_DELIM) !== -1) {
-      throw new Error(`localStorage: Cannot use ${RECENTLY_DELIM} as a character in a key`);
+    if (key.indexOf(this.delimiter) !== -1) {
+      throw new Error(`localStorage: Cannot use "${this.delimiter}" as a character in a key`);
     }
     try {
       LS[key] = val;
@@ -60,7 +59,7 @@ export class LocalStorageLRU {
    */
   public getRecent(): string[] {
     try {
-      return LS[this.recentKey].split(RECENTLY_DELIM);
+      return LS[this.recentKey].split(this.delimiter);
     } catch {
       return [];
     }
@@ -78,7 +77,7 @@ export class LocalStorageLRU {
       keys = keys.filter((el) => el !== key);
       // finally, insert the current key at the beginning
       keys.unshift(key);
-      const nextRecentUsage = keys.join(RECENTLY_DELIM);
+      const nextRecentUsage = keys.join(this.delimiter);
       try {
         LS[this.recentKey] = nextRecentUsage;
       } catch {
@@ -97,7 +96,7 @@ export class LocalStorageLRU {
       let keys: string[] = this.getRecent();
       // we only keep those keys, which are different from the one we removed
       keys = keys.filter((el) => el !== key);
-      LS[this.recentKey] = keys.join(RECENTLY_DELIM);
+      LS[this.recentKey] = keys.join(this.delimiter);
     } catch (e) {
       console.warn(`localStorage: unable to delete usage of '${key}' -- ${e}`);
     }

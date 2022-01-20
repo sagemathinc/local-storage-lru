@@ -33,6 +33,15 @@ test('fail if trying to set with the key of the recent list', () => {
   expect(() => LS.set('__recent', '1')).toThrow('localStorage: Key "__recent" is reserved.');
 });
 
+// the delimiter is customizable
+test('customize the delimiter string', () => {
+  const ls = new LocalStorageLRU({ delimiter: '::' });
+  ls.set('foo', '1');
+  ls.set('bar', '2');
+  expect(window.localStorage['__recent']).toBe('bar::foo');
+  expect(() => ls.set('1::2', '3')).toThrow('localStorage: Cannot use "::" as a character in a key');
+});
+
 test('basic set/get', () => {
   LS.set('foo', 'bar');
   expect(LS.get('foo')).toBe('bar');
