@@ -21,6 +21,15 @@ Then try again storing the new value.
 
 The setup follows https://itnext.io/step-by-step-building-and-publishing-an-npm-typescript-package-44fe7164964c
 
+## Release
+
+There are some hooks registered, see link above.
+
+```
+npm version patch
+npm publish
+```
+
 ## License
 
 Apache 2.0

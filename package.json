@@ -23,11 +23,8 @@
     "LRU",
     "Cache"
   ],
-  "author": "",
+  "author": "Sagemath, Inc.",
   "license": "APACHE-2.0",
-  "bugs": {
-    "url": "https://github.com/sagemathinc/local-storage-lru/issues"
-  },
   "homepage": "https://github.com/sagemathinc/local-storage-lru#readme",
   "devDependencies": {
     "@types/jest": "^27.4.0",
@@ -40,5 +37,8 @@
   },
   "files": [
     "lib/**/*"
-  ]
+  ],
+  "bugs": {
+    "url": "https://github.com/sagemathinc/local-storage-lru/issues"
+  }
 }
