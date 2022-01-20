@@ -20,7 +20,15 @@ test('default size', () => {
 });
 
 test('max size', () => {
-  expect(new LocalStorageLRU({ maxSize: 123 }).getMaxSize()).toBe(123);
+  const ls = new LocalStorageLRU({ maxSize: 11 });
+  expect(ls.getMaxSize()).toBe(11);
+  for (let i = 0; i < 100; i++) {
+    ls.set(`key${i}`, `value${i}`);
+  }
+  // we have 101 keys stored
+  expect(ls.size()).toBe(101);
+  // but recent is only 11 entries long + 1
+  expect(ls.getRecent().length).toBe(11);
 });
 
 test('test custom recent key', () => {
@@ -77,29 +85,36 @@ test('recently accessed', () => {
 });
 
 test('trimming', () => {
-  for (let i = 0; i < 1000; i++) {
+  for (let i = 0; i < 100; i++) {
     LS.set(`key${i}`, `value${i}`);
   }
-  LS.set('key123', '1');
-  LS.set('key456', '2');
-  expect(LS.size()).toBe(1000 + 1);
+  LS.set('key1', '1');
+  LS.set('key2', '2');
+  expect(LS.size()).toBe(100 + 1);
   LS['trimOldEntries']();
-  expect(LS.size()).toBe(1000 + 1 - 10);
-  expect(LS.getRecent().slice(0, 2)).toEqual(['key456', 'key123']);
+  expect(LS.size()).toBeLessThan(100 + 1);
+  expect(LS.size()).toBeGreaterThan(100 + 1 - 10);
+  expect(LS.getRecent().slice(0, 2)).toEqual(['key2', 'key1']);
   for (let i = 0; i < 101; i++) {
     LS['trimOldEntries']();
   }
-  expect(LS.getRecent().slice(0, 2)).toEqual(['key456', 'key123']);
-  expect(LS.size()).toBe(10);
+  expect(LS.getRecent().slice(0, 2)).toEqual(['key2', 'key1']);
+  expect(LS.size()).toBeLessThan(100 + 1 - 20);
 });
 
 test('candidate filter', () => {
+  // delete anything except "key123"
   const candidate = (key: string, _: string[]) => {
     return key !== 'key123';
   };
-  const ls = new LocalStorageLRU({ isCandidate: candidate });
+  const ls = new LocalStorageLRU({ isCandidate: candidate, maxSize: 1 });
   ls.set('key123', '1');
   ls.set('key456', '2');
-  ls['trimOldEntries']();
-  expect(ls.getRecent()).toEqual(['key123']);
+  ls.set('key789', '3');
+  expect(ls.getRecent().includes('test123')).toBe(false);
+  // no matter how often we trim, key123 is still there
+  for (let i = 0; i < 10; i++) ls['trimOldEntries']();
+  console.log(`recent: ${ls.getRecent()}`);
+  expect(ls.getRecent()).toEqual(['key789']);
+  expect(ls.get('key123')).toBe('1');
 });

@@ -1,16 +1,15 @@
 /**
  * LocalStorageLRU
- * Copyright [2022] SageMath, Inc.
+ * Copyright 2022] SageMath, Inc.
  * Licensed under the Apache License, Version 2.0
  */
-
-const LS = window.localStorage;
 
 interface Props {
   maxSize?: number; // how many most recently used keys are tracked
   isCandidate?: (key: string, recent: string[]) => boolean;
   recentKey?: string; // the key used to store the list of recently used keys
   delimiter?: string; // the delimiter used to separate keys in the recent list – default \0
+  localStorage?: typeof window.localStorage; // only used for testing
 }
 
 export class LocalStorageLRU {
@@ -18,12 +17,14 @@ export class LocalStorageLRU {
   private readonly isCandidate?: (key: string, recent: string[]) => boolean;
   private readonly recentKey: string;
   private readonly delimiter: string;
+  private readonly ls: typeof window.localStorage;
 
   constructor(props?: Props) {
     this.maxSize = props?.maxSize ?? 64;
     this.isCandidate = props?.isCandidate;
     this.recentKey = props?.recentKey ?? '__recent';
     this.delimiter = props?.delimiter ?? '\0';
+    this.ls = props?.localStorage ?? window.localStorage;
   }
 
   /**
@@ -45,7 +46,7 @@ export class LocalStorageLRU {
       throw new Error(`localStorage: Cannot use "${this.delimiter}" as a character in a key`);
     }
     try {
-      LS[key] = val;
+      this.ls[key] = val;
     } catch (e) {
       if (!this.trim(key, val)) {
         console.warn(`localStorage: set error -- ${e}`);
@@ -59,7 +60,7 @@ export class LocalStorageLRU {
    */
   public getRecent(): string[] {
     try {
-      return LS[this.recentKey].split(this.delimiter);
+      return this.ls[this.recentKey].split(this.delimiter);
     } catch {
       return [];
     }
@@ -71,15 +72,15 @@ export class LocalStorageLRU {
   private recordUsage(key: string) {
     try {
       let keys: string[] = this.getRecent();
-      // first, only keep most recent entries
-      keys = keys.slice(0, this.maxSize);
+      // first, only keep most recent entries, and leave one slot for the new one
+      keys = keys.slice(0, this.maxSize - 1);
       // if the key already exists, remove it
       keys = keys.filter((el) => el !== key);
       // finally, insert the current key at the beginning
       keys.unshift(key);
       const nextRecentUsage = keys.join(this.delimiter);
       try {
-        LS[this.recentKey] = nextRecentUsage;
+        this.ls[this.recentKey] = nextRecentUsage;
       } catch {
         this.trim(this.recentKey, nextRecentUsage);
       }
@@ -96,7 +97,7 @@ export class LocalStorageLRU {
       let keys: string[] = this.getRecent();
       // we only keep those keys, which are different from the one we removed
       keys = keys.filter((el) => el !== key);
-      LS[this.recentKey] = keys.join(this.delimiter);
+      this.ls[this.recentKey] = keys.join(this.delimiter);
     } catch (e) {
       console.warn(`localStorage: unable to delete usage of '${key}' -- ${e}`);
     }
@@ -112,7 +113,7 @@ export class LocalStorageLRU {
     for (let i = 0; i < 10; i++) {
       this.trimOldEntries();
       try {
-        LS[key] = val;
+        this.ls[key] = val;
         // no error means we were able to set the value
         console.warn(`localStorage: trimming a few entries worked`);
         return true;
@@ -127,17 +128,18 @@ export class LocalStorageLRU {
     if (this.size() === 0) return;
     // delete a maximum of 10 entries
     let num = Math.min(this.size(), 10);
-    const keys = Object.keys(LS);
+    const keys = Object.keys(this.ls);
     // only get recent once, more efficient
     const recent = this.getRecent();
     // attempt deleting those entries up to 20 times
     for (let i = 0; i < 20; i++) {
       const candidate = keys[Math.floor(Math.random() * keys.length)];
+      if (candidate === this.recentKey) continue;
       if (recent.includes(candidate)) continue;
       if (this.isCandidate != null && !this.isCandidate(candidate, recent)) continue;
-      // do not call delete_local_storage, could cause a recursion
+      // do not call this.delete, could cause a recursion
       try {
-        delete LS[candidate];
+        delete this.ls[candidate];
       } catch (e) {
         console.warn(`localStorage: trimming/delete does not work`);
         return;
@@ -150,7 +152,7 @@ export class LocalStorageLRU {
   public get(key: string): string | undefined {
     try {
       this.recordUsage(key);
-      return LS[key];
+      return this.ls[key];
     } catch (e) {
       console.warn(`localStorage: get error -- ${e}`);
       return undefined;
@@ -164,7 +166,7 @@ export class LocalStorageLRU {
   public delete(key: string): void {
     try {
       this.deleteUsage(key);
-      delete LS[key];
+      delete this.ls[key];
     } catch (e) {
       console.warn(`localStorage: delete error -- ${e}`);
     }
@@ -177,11 +179,11 @@ export class LocalStorageLRU {
     try {
       const TEST = '__test__';
       const timestamp = `${Date.now()}`;
-      LS[TEST] = timestamp;
-      if (LS[TEST] !== timestamp) {
+      this.ls[TEST] = timestamp;
+      if (this.ls[TEST] !== timestamp) {
         throw new Error('localStorage: test failed');
       }
-      delete LS[TEST];
+      delete this.ls[TEST];
       return true;
     } catch (e) {
       return false;
@@ -190,7 +192,7 @@ export class LocalStorageLRU {
 
   public size(): number {
     try {
-      return LS.length;
+      return this.ls.length;
     } catch (e) {
       return 0;
     }
@@ -201,7 +203,7 @@ export class LocalStorageLRU {
    */
   public clear(): boolean {
     try {
-      LS.clear();
+      this.ls.clear();
       return true;
     } catch (e) {
       console.warn(`localStorage: clear error -- ${e}`);
