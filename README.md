@@ -17,6 +17,10 @@ Then try again storing the new value.
 - The entire overhead is *one* additional key/value pair storing the pointers to these LRU keys.
 - The keys and values you try to store are not modified.
 
+## Development
+
+The setup follows https://itnext.io/step-by-step-building-and-publishing-an-npm-typescript-package-44fe7164964c
+
 ## License
 
 Apache 2.0
