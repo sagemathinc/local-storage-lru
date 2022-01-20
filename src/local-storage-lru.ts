@@ -110,7 +110,7 @@ export class LocalStorageLRU {
   private trim(key: string, val: string): boolean {
     // we try up to 10 times to remove a couple of key/values
     for (let i = 0; i < 10; i++) {
-      this.do_the_trim();
+      this.trimOldEntries();
       try {
         LS[key] = val;
         // no error means we were able to set the value
@@ -123,7 +123,7 @@ export class LocalStorageLRU {
   }
 
   // delete a few keys (not recently used and only of a specific type).
-  private do_the_trim() {
+  private trimOldEntries() {
     if (this.size() === 0) return;
     // delete a maximum of 10 entries
     let num = Math.min(this.size(), 10);
@@ -132,18 +132,18 @@ export class LocalStorageLRU {
     const recent = this.getRecent();
     // attempt deleting those entries up to 20 times
     for (let i = 0; i < 20; i++) {
-      const k = keys[Math.floor(Math.random() * keys.length)];
-      if (this.isCandidate == null || this.isCandidate(k, recent)) {
-        // do not call delete_local_storage, could cause a recursion
-        try {
-          delete LS[k];
-        } catch (e) {
-          console.warn(`localStorage: trimming/delete does not work`);
-          return;
-        }
-        num -= 1;
-        if (num < 0) return;
+      const candidate = keys[Math.floor(Math.random() * keys.length)];
+      if (recent.includes(candidate)) continue;
+      if (this.isCandidate != null && !this.isCandidate(candidate, recent)) continue;
+      // do not call delete_local_storage, could cause a recursion
+      try {
+        delete LS[candidate];
+      } catch (e) {
+        console.warn(`localStorage: trimming/delete does not work`);
+        return;
       }
+      num -= 1;
+      if (num <= 0) return;
     }
   }
 

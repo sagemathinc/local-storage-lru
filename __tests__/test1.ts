@@ -75,3 +75,31 @@ test('recently accessed', () => {
   expect(v).toEqual('1');
   expect(LS.getRecent()).toEqual(['foo', 'bar']);
 });
+
+test('trimming', () => {
+  for (let i = 0; i < 1000; i++) {
+    LS.set(`key${i}`, `value${i}`);
+  }
+  LS.set('key123', '1');
+  LS.set('key456', '2');
+  expect(LS.size()).toBe(1000 + 1);
+  LS['trimOldEntries']();
+  expect(LS.size()).toBe(1000 + 1 - 10);
+  expect(LS.getRecent().slice(0, 2)).toEqual(['key456', 'key123']);
+  for (let i = 0; i < 101; i++) {
+    LS['trimOldEntries']();
+  }
+  expect(LS.getRecent().slice(0, 2)).toEqual(['key456', 'key123']);
+  expect(LS.size()).toBe(10);
+});
+
+test('candidate filter', () => {
+  const candidate = (key: string, _: string[]) => {
+    return key !== 'key123';
+  };
+  const ls = new LocalStorageLRU({ isCandidate: candidate });
+  ls.set('key123', '1');
+  ls.set('key456', '2');
+  ls['trimOldEntries']();
+  expect(ls.getRecent()).toEqual(['key123']);
+});
