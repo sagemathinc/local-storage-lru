@@ -2,6 +2,7 @@
   "name": "@cocalc/local-storage-lru",
   "version": "1.0.7",
   "description": "Simple LRU cache for a browser's localStorage",
+  "main": "./lib/index.js",
   "exports": {
     ".": "./lib/index.js"
   },
