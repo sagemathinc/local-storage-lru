@@ -9,16 +9,20 @@
     "format": "prettier --write \"**/*.ts\" \"**/*.js\"",
     "lint": "tslint -p tsconfig.json",
     "prepare": "npm run build",
-    "prepublishOnly" : "npm test && npm run lint",
-    "preversion" : "npm run lint",
-    "version" : "npm run format && git add -A src",
-    "postversion" : "git push && git push --tags"
+    "prepublishOnly": "npm run lint && npm test",
+    "preversion": "npm run lint",
+    "version": "npm run format && git add -A src",
+    "postversion": "git push && git push --tags"
   },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/sagemathinc/local-storage-lru.git"
   },
-  "keywords": ["localStorage", "LRU", "Cache"],
+  "keywords": [
+    "localStorage",
+    "LRU",
+    "Cache"
+  ],
   "author": "",
   "license": "APACHE-2.0",
   "bugs": {
