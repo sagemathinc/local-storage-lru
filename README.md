@@ -1,5 +1,9 @@
 # LRU Cache for Browser's Local Storage
 
+## WARNING: This is an experimental implementation.
+
+As of writing this, this package is in development and not used in production.
+
 ## Problem
 
 Saving an increasing number of key/value pairs in `localStorage` causes it to fill up at some point.
@@ -14,7 +18,7 @@ Then try again storing the new value.
 
 ## Benefits
 
-- The entire overhead is *one* additional key/value pair storing the pointers to these LRU keys.
+- The entire overhead is _one_ additional key/value pair storing the pointers to these LRU keys.
 - The keys and values you try to store are not modified.
 
 ## Development
@@ -33,5 +37,3 @@ npm publish
 ## License
 
 Apache 2.0
-
-
