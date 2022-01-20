@@ -1,0 +1,4 @@
+{
+  "test.autoRun": { "watch": true, "onStartup": ["all-tests"] },
+  "jest.jestCommandLine": "node_modules/.bin/jest --config jestconfig.json"
+}
