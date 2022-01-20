@@ -1,8 +1,13 @@
 /**
+ * LocalStorageLRU
+ * Copyright 2022 SageMath, Inc.
+ * Licensed under the Apache License, Version 2.0
+ *
  * @jest-environment jsdom
  */
 
 import { LocalStorageLRU } from '../src/index';
+import { MockLocalStorage } from '../src/mock-ls';
 
 let LS: LocalStorageLRU;
 
@@ -92,8 +97,8 @@ test('trimming', () => {
   LS.set('key2', '2');
   expect(LS.size()).toBe(100 + 1);
   LS['trimOldEntries']();
-  expect(LS.size()).toBeLessThan(100 + 1);
-  expect(LS.size()).toBeGreaterThan(100 + 1 - 10);
+  expect(LS.size()).toBeLessThanOrEqual(100 + 1);
+  expect(LS.size()).toBeGreaterThanOrEqual(100 + 1 - 10);
   expect(LS.getRecent().slice(0, 2)).toEqual(['key2', 'key1']);
   for (let i = 0; i < 101; i++) {
     LS['trimOldEntries']();
@@ -117,4 +122,26 @@ test('candidate filter', () => {
   console.log(`recent: ${ls.getRecent()}`);
   expect(ls.getRecent()).toEqual(['key789']);
   expect(ls.get('key123')).toBe('1');
+});
+
+test('mockup local storage', () => {
+  const myls = new MockLocalStorage(10);
+  const ls = new LocalStorageLRU({ localStorage: myls, maxSize: 5 });
+  expect(ls.getLocalStorage()).toBe(myls);
+  for (let i = 0; i < 20; i++) {
+    ls.set(`key${i}`, `value${i}`);
+  }
+  // last one should survive
+  expect(ls.get('key19')).toBe('value19');
+  // older ones not
+  expect(ls.get('key5')).toBe(undefined);
+  expect(ls.getRecent().length).toBe(5);
+  console.log(Object.keys(ls.getLocalStorage()));
+  expect(Object.keys(ls.getLocalStorage()).length).toBeLessThanOrEqual(10);
+});
+
+test('clearing', () => {
+  LS.set('foo', 'bar');
+  LS.clear();
+  expect(LS.get('foo')).toBe(null);
 });

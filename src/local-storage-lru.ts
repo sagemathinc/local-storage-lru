@@ -1,6 +1,6 @@
 /**
  * LocalStorageLRU
- * Copyright 2022] SageMath, Inc.
+ * Copyright 2022 SageMath, Inc.
  * Licensed under the Apache License, Version 2.0
  */
 
@@ -46,8 +46,9 @@ export class LocalStorageLRU {
       throw new Error(`localStorage: Cannot use "${this.delimiter}" as a character in a key`);
     }
     try {
-      this.ls[key] = val;
+      this.ls.setItem(key, val);
     } catch (e) {
+      console.log('set error', e);
       if (!this.trim(key, val)) {
         console.warn(`localStorage: set error -- ${e}`);
       }
@@ -60,7 +61,7 @@ export class LocalStorageLRU {
    */
   public getRecent(): string[] {
     try {
-      return this.ls[this.recentKey].split(this.delimiter);
+      return this.ls.getItem(this.recentKey)?.split(this.delimiter) ?? [];
     } catch {
       return [];
     }
@@ -80,7 +81,7 @@ export class LocalStorageLRU {
       keys.unshift(key);
       const nextRecentUsage = keys.join(this.delimiter);
       try {
-        this.ls[this.recentKey] = nextRecentUsage;
+        this.ls.setItem(this.recentKey, nextRecentUsage);
       } catch {
         this.trim(this.recentKey, nextRecentUsage);
       }
@@ -97,7 +98,7 @@ export class LocalStorageLRU {
       let keys: string[] = this.getRecent();
       // we only keep those keys, which are different from the one we removed
       keys = keys.filter((el) => el !== key);
-      this.ls[this.recentKey] = keys.join(this.delimiter);
+      this.ls.setItem(this.recentKey, keys.join(this.delimiter));
     } catch (e) {
       console.warn(`localStorage: unable to delete usage of '${key}' -- ${e}`);
     }
@@ -113,7 +114,7 @@ export class LocalStorageLRU {
     for (let i = 0; i < 10; i++) {
       this.trimOldEntries();
       try {
-        this.ls[key] = val;
+        this.ls.setItem(key, val);
         // no error means we were able to set the value
         console.warn(`localStorage: trimming a few entries worked`);
         return true;
@@ -128,7 +129,7 @@ export class LocalStorageLRU {
     if (this.size() === 0) return;
     // delete a maximum of 10 entries
     let num = Math.min(this.size(), 10);
-    const keys = Object.keys(this.ls);
+    const keys = this.ls === window.localStorage ? Object.keys(this.ls) : this.ls.keys();
     // only get recent once, more efficient
     const recent = this.getRecent();
     // attempt deleting those entries up to 20 times
@@ -139,7 +140,7 @@ export class LocalStorageLRU {
       if (this.isCandidate != null && !this.isCandidate(candidate, recent)) continue;
       // do not call this.delete, could cause a recursion
       try {
-        delete this.ls[candidate];
+        this.ls.removeItem(candidate);
       } catch (e) {
         console.warn(`localStorage: trimming/delete does not work`);
         return;
@@ -149,13 +150,13 @@ export class LocalStorageLRU {
     }
   }
 
-  public get(key: string): string | undefined {
+  public get(key: string): string | null {
     try {
       this.recordUsage(key);
-      return this.ls[key];
+      return this.ls.getItem(key);
     } catch (e) {
       console.warn(`localStorage: get error -- ${e}`);
-      return undefined;
+      return null;
     }
   }
 
@@ -166,7 +167,7 @@ export class LocalStorageLRU {
   public delete(key: string): void {
     try {
       this.deleteUsage(key);
-      delete this.ls[key];
+      this.ls.removeItem(key);
     } catch (e) {
       console.warn(`localStorage: delete error -- ${e}`);
     }
@@ -179,11 +180,11 @@ export class LocalStorageLRU {
     try {
       const TEST = '__test__';
       const timestamp = `${Date.now()}`;
-      this.ls[TEST] = timestamp;
-      if (this.ls[TEST] !== timestamp) {
+      this.ls.setItem(TEST, timestamp);
+      if (this.ls.getItem(TEST) !== timestamp) {
         throw new Error('localStorage: test failed');
       }
-      delete this.ls[TEST];
+      this.ls.removeItem(TEST);
       return true;
     } catch (e) {
       return false;
@@ -209,5 +210,9 @@ export class LocalStorageLRU {
       console.warn(`localStorage: clear error -- ${e}`);
       return false;
     }
+  }
+
+  public getLocalStorage() {
+    return this.ls;
   }
 }
