@@ -152,8 +152,9 @@ export class LocalStorageLRU {
 
   public get(key: string): string | null {
     try {
+      const v = this.ls.getItem(key);
       this.recordUsage(key);
-      return this.ls.getItem(key);
+      return v;
     } catch (e) {
       console.warn(`localStorage: get error -- ${e}`);
       return null;
