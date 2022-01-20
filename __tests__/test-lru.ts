@@ -7,7 +7,7 @@
  */
 
 import { LocalStorageLRU } from '../src/index';
-import { MockLocalStorage } from '../src/mock-ls';
+import { LocalStorageFallback } from '../src/mock-ls';
 
 let LS: LocalStorageLRU;
 
@@ -119,13 +119,12 @@ test('candidate filter', () => {
   expect(ls.getRecent().includes('test123')).toBe(false);
   // no matter how often we trim, key123 is still there
   for (let i = 0; i < 10; i++) ls['trimOldEntries']();
-  console.log(`recent: ${ls.getRecent()}`);
   expect(ls.getRecent()).toEqual(['key789']);
   expect(ls.get('key123')).toBe('1');
 });
 
 test('mockup local storage', () => {
-  const myls = new MockLocalStorage(10);
+  const myls = new LocalStorageFallback(10);
   const ls = new LocalStorageLRU({ localStorage: myls, maxSize: 5 });
   expect(ls.getLocalStorage()).toBe(myls);
 

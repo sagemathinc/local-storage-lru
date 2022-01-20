@@ -4,7 +4,7 @@
  * Licensed under the Apache License, Version 2.0
  */
 
-import { MockLocalStorage } from './mock-ls';
+import { LocalStorageFallback } from './mock-ls';
 
 interface Props {
   maxSize?: number; // how many most recently used keys are tracked
@@ -36,7 +36,7 @@ export class LocalStorageLRU {
     this.ls = props?.localStorage ?? window.localStorage;
     const fallback = props?.fallback ?? false;
     if (fallback && !LocalStorageLRU.testLocalStorage(this.ls)) {
-      this.ls = new MockLocalStorage(1000);
+      this.ls = new LocalStorageFallback(1000);
     }
   }
 

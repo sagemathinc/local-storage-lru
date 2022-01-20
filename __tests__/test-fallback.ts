@@ -7,15 +7,14 @@
  */
 
 import { LocalStorageLRU } from '../src/index';
-import { MockLocalStorage } from '../src/mock-ls';
+import { LocalStorageFallback } from '../src/mock-ls';
 
 let LS: LocalStorageLRU;
 
 beforeEach(() => {
   window.localStorage.clear();
-  LS = new LocalStorageLRU();
-  // @ts-ignore
-  LS.ls = new MockLocalStorage();
+  // this purposely sets a problematic local storage object, in order to let the fallback kick in
+  LS = new LocalStorageLRU({ fallback: true, localStorage: [] as any });
 });
 
 test('basic set/get', () => {
@@ -59,5 +58,5 @@ test('clearing', () => {
 });
 
 test('use fallback implementation', () => {
-  expect(LS.getLocalStorage() instanceof MockLocalStorage).toBe(true);
+  expect(LS.getLocalStorage() instanceof LocalStorageFallback).toBe(true);
 });
