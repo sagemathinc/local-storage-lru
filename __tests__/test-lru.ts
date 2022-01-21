@@ -218,7 +218,7 @@ test('for..of gives [key, value] pairs', () => {
   LS.set('key1', '1');
   LS.set('key2', '2');
   LS.set('key3', '3');
-  const entries: [string, string][] = [];
+  const entries: [string, any][] = [];
   for (const [k, v] of LS) {
     entries.push([k, v]);
   }
@@ -231,4 +231,29 @@ test('for..of gives [key, value] pairs', () => {
     ['key2', '2'],
     ['key3', '3'],
   ]);
+});
+
+test('load/save objects as well', () => {
+  const d = 1900494000000;
+  const n = BigInt(12300000000000000001);
+  const a = ['a', 'b', 123, { x: 1, y: 2.2 }];
+  const o = { a: 1, b: 2 };
+  const i = 12321;
+  LS.set('object', o);
+  LS.set('str[]', a);
+  LS.set('number', i);
+  LS.set('a date', new Date(d));
+  LS.set('boolean', true);
+  LS.set('null_val', null);
+  LS.set('undefined', undefined);
+  LS.set('bigint', n);
+  // test that we can load them
+  expect(LS.get('object')).toEqual(o);
+  expect(LS.get('str[]')).toEqual(a);
+  expect(LS.get('number')).toBe(i);
+  expect(LS.get('a date')).toEqual(new Date(d));
+  expect(LS.get('boolean')).toBe(true);
+  expect(LS.get('null_val')).toBe(null);
+  expect(LS.get('undefined')).toBe(null); // can't store undefined
+  expect(LS.get('bigint')).toBe(n);
 });

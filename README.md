@@ -1,29 +1,36 @@
 # LRU Cache for Browser's Local Storage
 
 [![npm version](https://badge.fury.io/js/@cocalc%2Flocal-storage-lru.svg)](https://badge.fury.io/js/@cocalc%2Flocal-storage-lru)
-![Statements](https://img.shields.io/badge/statements-82.11%25-yellow.svg?style=flat)
-![Branches](https://img.shields.io/badge/branches-87.03%25-yellow.svg?style=flat)
-![Functions](https://img.shields.io/badge/functions-96.87%25-brightgreen.svg?style=flat)
-![Lines](https://img.shields.io/badge/lines-81.25%25-yellow.svg?style=flat)
+![Statements](https://img.shields.io/badge/statements-83.72%25-yellow.svg?style=flat)
+![Branches](https://img.shields.io/badge/branches-88.7%25-yellow.svg?style=flat)
+![Functions](https://img.shields.io/badge/functions-97.05%25-brightgreen.svg?style=flat)
+![Lines](https://img.shields.io/badge/lines-83.03%25-yellow.svg?style=flat)
 
 ## WARNING: this is an experimental implementation
 
 ## Problem
 
 Saving an increasing number of key/value pairs in `localStorage` causes it to fill up at some point.
-Then, adding/modifying throws an exception.
+From that point on, adding/modifying throws an exception.
 
-## Idea
+## Solution
 
 Keep track of last `n` recently accessed/modified keys.
 If an exception occurs,
 randomly remove a few keys which aren't in that list and also – optionally – only whitelisted ones.
 Then try again storing the new value.
 
-## Benefits
+### Benefits
 
 - The entire overhead is _one_ additional key/value pair storing the pointers to these LRU keys.
 - The keys and values you try to store are not modified.
+
+
+## Design Goals
+
+- **robust**: no exceptions are thrown (only if there is a problematic key)
+- **universal**: also supports storing objects, `Date`, `BigInt`, arrays etc..
+- **backwards compatible**: if you already store string values, they're not modified!
 
 ## Usage
 
@@ -35,6 +42,10 @@ Options:
 - `maxSize` (optional): the maximum number of keys to keep in the list of recently used keys. A larger list reduces the chances of deleting an "important" key, but at the same time, overall more storage is used.
 - `isCandidate` (optional): a function that takes a key and returns `true` if the key is a candidate for deletion. By default, any key except for the `recentKey` is a candidate. Optional second argument is the array of all recent keys.
 - `fallback` (optional, default `false`): if `true`, `localStorage` is checked if it works. If not, data is stored in a mockup storage with limited space.
+- `serializer` (optional): by default `JSON.stringify`, but you can use your own.
+- `deserializer` (optional): counterpart to the above, by default `JSON.parse`.
+- `typePrefixes` (optional): prefixes to serialized values if they're not stored a strings – somehow, we have to mark values if they are a complex object...
+- `typePrefixDelimiter` (optional): string appended to each `typePrefix`  to separate from the seraliazed value – default: `\0`
 
 ```{javascript}
 // simple:

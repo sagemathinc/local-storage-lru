@@ -6,6 +6,18 @@
 
 import { LocalStorageFallback } from './mock-ls';
 
+export interface TypePrefixes {
+  date: string;
+  bigint: string;
+  object: string;
+}
+
+const DEFAULT_TYPE_PREFIXES: TypePrefixes = {
+  date: '__date',
+  bigint: '__bigint',
+  object: '__object',
+} as const;
+
 interface Props {
   maxSize?: number; // how many most recently used keys are tracked
   isCandidate?: (key: string, recent: string[]) => boolean;
@@ -13,6 +25,10 @@ interface Props {
   delimiter?: string; // the delimiter used to separate keys in the recent list – default \0
   localStorage?: typeof window.localStorage; // only used for testing
   fallback?: boolean; // if true, use a memory-backed object to store the data
+  serializer?: (data: any) => string; // custom serializer, default JSON.stringify
+  deserializer?: (ser: string) => any; // custom de-serializer, default JSON.parse
+  typePrefixes?: TypePrefixes; // custom type prefixes
+  typePrefixDelimiter?: string; // the string delimiting the type prefix and the value
 }
 
 /**
@@ -27,6 +43,10 @@ export class LocalStorageLRU {
   private readonly recentKey: string;
   private readonly delimiter: string;
   private readonly ls: typeof window.localStorage;
+  private readonly serializer: (data: any) => string;
+  private readonly deserializer: (ser: string) => any;
+  private readonly typePrefixes: TypePrefixes;
+  private readonly typePrefixDelimiter: string;
 
   constructor(props?: Props) {
     this.maxSize = props?.maxSize ?? 64;
@@ -34,10 +54,23 @@ export class LocalStorageLRU {
     this.recentKey = props?.recentKey ?? '__recent';
     this.delimiter = props?.delimiter ?? '\0';
     this.ls = props?.localStorage ?? window.localStorage;
+    this.serializer = props?.serializer ?? JSON.stringify;
+    this.deserializer = props?.deserializer ?? JSON.parse;
+    this.typePrefixDelimiter = props?.typePrefixDelimiter ?? '\0';
+    this.typePrefixes = this.preparePrefixes(props?.typePrefixes);
     const fallback = props?.fallback ?? false;
     if (fallback && !LocalStorageLRU.testLocalStorage(this.ls)) {
       this.ls = new LocalStorageFallback(1000);
     }
+  }
+
+  private preparePrefixes(typePrefixes?: TypePrefixes): TypePrefixes {
+    const delim = this.typePrefixDelimiter;
+    return {
+      date: `${typePrefixes?.date ?? DEFAULT_TYPE_PREFIXES.date}${delim}`,
+      bigint: `${typePrefixes?.bigint ?? DEFAULT_TYPE_PREFIXES.bigint}${delim}`,
+      object: `${typePrefixes?.object ?? DEFAULT_TYPE_PREFIXES.object}${delim}`,
+    };
   }
 
   /**
@@ -47,11 +80,57 @@ export class LocalStorageLRU {
     return this.maxSize;
   }
 
+  private serialize(val: unknown): string {
+    if (typeof val === 'string') {
+      return val;
+    } else if (val instanceof Date) {
+      return `${this.typePrefixes.date}${val.valueOf()}`;
+    } else if (typeof val === 'bigint') {
+      return `${this.typePrefixes.bigint}${val.toString()}`;
+    } else if (val === undefined) {
+      return `${this.typePrefixes.object}${this.serializer(null)}`;
+    }
+    return `${this.typePrefixes.object}${this.serializer(val)}`;
+  }
+
+  private deserialize(ser: string | null): string | object | BigInt | null {
+    if (ser === null) {
+      return null;
+    }
+    try {
+      if (ser.startsWith(this.typePrefixes.object)) {
+        const s = ser.slice(this.typePrefixes.object.length);
+        try {
+          return this.deserializer(s);
+        } catch {
+          return s;
+        }
+      } else if (ser.startsWith(this.typePrefixes.date)) {
+        const tsStr = ser.slice(this.typePrefixes.date.length);
+        try {
+          const ts = parseInt(tsStr, 10);
+          return new Date(ts);
+        } catch {
+          return tsStr; // we return the string if we can't parse it
+        }
+      } else if (ser.startsWith(this.typePrefixes.bigint)) {
+        const s = ser.slice(this.typePrefixes.bigint.length);
+        try {
+          return BigInt(s);
+        } catch {
+          return s;
+        }
+      }
+    } catch {}
+    // most likely a plain string
+    return ser;
+  }
+
   /**
    * Wrapper around localStorage, so we can safely touch it without raising an
    * exception if it is banned (like in some browser modes) or doesn't exist.
    */
-  public set(key: string, val: string): void {
+  public set(key: string, val: unknown): void {
     if (key === this.recentKey) {
       throw new Error(`localStorage: Key "${this.recentKey}" is reserved.`);
     }
@@ -59,19 +138,37 @@ export class LocalStorageLRU {
       throw new Error(`localStorage: Cannot use "${this.delimiter}" as a character in a key`);
     }
 
+    const valSer = this.serialize(val);
+
     // we have to record the usgae of the key first!
     // otherwise, setting it first and then updating the list of recent keys
     // could delete that very key upon updating the list of recently used keys.
     this.recordUsage(key);
 
     try {
-      this.ls.setItem(key, val);
+      this.ls.setItem(key, valSer);
     } catch (e) {
       console.log('set error', e);
-      if (!this.trim(key, val)) {
+      if (!this.trim(key, valSer)) {
         console.warn(`localStorage: set error -- ${e}`);
       }
     }
+  }
+
+  public get(key: string): string | object | null {
+    try {
+      const v = this.ls.getItem(key);
+      this.recordUsage(key);
+      return this.deserialize(v);
+    } catch (e) {
+      console.warn(`localStorage: get error -- ${e}`);
+      return null;
+    }
+  }
+
+  public has(key: string): boolean {
+    // we don't call this.get, because we don't want to record the usage
+    return this.ls.getItem(key) != null;
   }
 
   /**
@@ -173,22 +270,6 @@ export class LocalStorageLRU {
     }
   }
 
-  public get(key: string): string | null {
-    try {
-      const v = this.ls.getItem(key);
-      this.recordUsage(key);
-      return v;
-    } catch (e) {
-      console.warn(`localStorage: get error -- ${e}`);
-      return null;
-    }
-  }
-
-  public has(key: string): boolean {
-    // we don't call this.get, because we don't want to record the usage
-    return this.ls.getItem(key) != null;
-  }
-
   public keys(sorted = false): string[] {
     const keys = this.ls === window.localStorage ? Object.keys(this.ls) : this.ls.keys();
     const fkeys: string[] = keys.filter((el: string) => el !== this.recentKey);
@@ -284,7 +365,7 @@ export class LocalStorageLRU {
     }
   }
 
-  public *[Symbol.iterator](): IterableIterator<[string, string]> {
+  public *[Symbol.iterator](): IterableIterator<[string, string | object]> {
     for (const k of this.keys()) {
       if (k === this.recentKey) continue;
       if (k == null) continue;

@@ -1,4 +1,12 @@
 {
   "test.autoRun": { "watch": true, "onStartup": ["all-tests"] },
-  "jest.jestCommandLine": "node_modules/.bin/jest --config jestconfig.json"
+  "jest.jestCommandLine": "node_modules/.bin/jest --config jestconfig.json",
+  "cSpell.customDictionaries": {
+    "custom-dictionary-workspace": {
+      "name": "custom-dictionary-workspace",
+      "path": "${workspaceFolder:local-storage-lru}/.cspell/custom-dictionary-workspace.txt",
+      "addWords": true,
+      "scope": "workspace"
+    }
+  }
 }
