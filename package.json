@@ -7,7 +7,7 @@
     ".": "./lib/index.js"
   },
   "scripts": {
-    "test": "jest --config jestconfig.json",
+    "test": "jest --config jestconfig.json && npm run make-badges",
     "build": "tsc",
     "format": "prettier --write \"**/*.ts\" \"**/*.js\"",
     "lint": "tslint -p tsconfig.json",
@@ -15,7 +15,8 @@
     "prepublishOnly": "npm run lint && npm test",
     "preversion": "npm run lint",
     "version": "npm run format && git add -A src",
-    "postversion": "git push && git push --tags"
+    "postversion": "git push && git push --tags",
+    "make-badges": "istanbul-badges-readme"
   },
   "repository": {
     "type": "git",
@@ -31,6 +32,7 @@
   "homepage": "https://github.com/sagemathinc/local-storage-lru#readme",
   "devDependencies": {
     "@types/jest": "^27.4.0",
+    "istanbul-badges-readme": "^1.8.1",
     "jest": "^27.4.7",
     "prettier": "^2.5.1",
     "ts-jest": "^27.1.3",

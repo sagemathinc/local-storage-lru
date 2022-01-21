@@ -1,5 +1,11 @@
 # LRU Cache for Browser's Local Storage
 
+[![npm version](https://badge.fury.io/js/@cocalc%2Flocal-storage-lru.svg)](https://badge.fury.io/js/@cocalc%2Flocal-storage-lru)
+![Statements](https://img.shields.io/badge/statements-82.11%25-yellow.svg?style=flat)
+![Branches](https://img.shields.io/badge/branches-87.03%25-yellow.svg?style=flat)
+![Functions](https://img.shields.io/badge/functions-96.87%25-brightgreen.svg?style=flat)
+![Lines](https://img.shields.io/badge/lines-81.25%25-yellow.svg?style=flat)
+
 ## WARNING: this is an experimental implementation
 
 ## Problem
