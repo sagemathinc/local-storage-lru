@@ -36,7 +36,7 @@ Options:
 - `isCandidate` (optional): a function that takes a key and returns `true` if the key is a candidate for deletion. By default, any key except for the `recentKey` is a candidate. Optional second argument is the array of all recent keys.
 - `fallback` (optional, default `false`): if `true`, `localStorage` is checked if it works. If not, data is stored in a mockup storage with limited space.
 
-```{typescript}
+```{javascript}
 // simple:
 const storage = new LocalStorageLRU();
 
@@ -58,7 +58,7 @@ const storage = new LocalStorageLRU({
 
 For more, check out the [tests](__tests__/test-lru.ts).
 
-```{typescript}
+```{javascript}
 storage.set('foo', 'bar');
 storage.get('foo') == 'bar'; // true
 ```
