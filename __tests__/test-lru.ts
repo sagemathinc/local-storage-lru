@@ -46,6 +46,10 @@ test('fail if trying to set with the key of the recent list', () => {
   expect(() => LS.set('__recent', '1')).toThrow('localStorage: Key "__recent" is reserved.');
 });
 
+test('fail if key contains the delimiter', () => {
+  expect(() => LS.set('\0', '1')).toThrow('localStorage: Cannot use "\0" as a character in a key');
+});
+
 // the delimiter is customizable
 test('customize the delimiter string', () => {
   const ls = new LocalStorageLRU({ delimiter: '::' });
