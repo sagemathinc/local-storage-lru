@@ -7,6 +7,7 @@
     "radix": false,
     "semicolon": [true, "always"],
     "whitespace": [true, "check-operator", "check-typecast", "check-separator"],
-    "no-empty": [true, "allow-empty-catch"]
+    "no-empty": [true, "allow-empty-catch"],
+    "curly": [true, "ignore-same-line"]
   }
 }

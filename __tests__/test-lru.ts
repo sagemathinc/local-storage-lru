@@ -31,7 +31,7 @@ test('max size', () => {
     ls.set(`key${i}`, `value${i}`);
   }
   // we have 101 keys stored
-  expect(ls.size()).toBe(101);
+  expect(ls.size()).toBe(100);
   // but recent is only 11 entries long + 1
   expect(ls.getRecent().length).toBe(11);
 });
@@ -95,7 +95,7 @@ test('trimming', () => {
   }
   LS.set('key1', '1');
   LS.set('key2', '2');
-  expect(LS.size()).toBe(100 + 1);
+  expect(LS.size()).toBe(100);
   LS['trimOldEntries']();
   expect(LS.size()).toBeLessThanOrEqual(100 + 1);
   expect(LS.size()).toBeGreaterThanOrEqual(100 + 1 - 10);
@@ -156,4 +156,75 @@ test('use main implementation', () => {
 
 test('localStorageTest', () => {
   expect(LocalStorageLRU.testLocalStorage(LS.getLocalStorage())).toBe(true);
+});
+
+test('getRecentKey', () => {
+  expect(LS.getRecentKey()).toBe('__recent');
+});
+
+test('has', () => {
+  expect(LS.has('foo')).toBe(false);
+  LS.set('foo', 'bar');
+  expect(LS.has('foo')).toBe(true);
+  expect(LS.has(LS.getRecentKey())).toBe(true);
+});
+
+test('has recent key', () => {
+  LS.set('foo', 'bar');
+  expect(LS.has(LS.getRecentKey())).toBe(true);
+});
+
+test('get "null" if it does not exist', () => {
+  expect(LS.get('foo')).toBe(null);
+});
+
+test('delete prefix', () => {
+  LS.set('key123', '1');
+  LS.set('key456', '2');
+  LS.set('other987', '3');
+  LS.set('key789', '4');
+  LS.deletePrefix('other');
+  expect(LS.has('other987')).toBe(false);
+  expect(LS.has('key123')).toBe(true);
+  expect(LS.get('other987')).toBe(null);
+  expect(LS.get('key789')).toBe('4');
+  expect(LS.size()).toBe(3);
+});
+
+test('keys', () => {
+  LS.set('key123', '1');
+  LS.set('key456', '2');
+  LS.set('other987', '3');
+  expect(LS.keys()).toEqual(['key123', 'key456', 'other987']);
+});
+
+test('for..in gives keys', () => {
+  LS.set('key1', '1');
+  LS.set('key2', '2');
+  LS.set('key3', '3');
+  const keys: string[] = [];
+  for (const entry in LS.getLocalStorage()) {
+    keys.push(entry);
+  }
+  expect(LS.getLocalStorage().length).toBe(4);
+  expect(LS.keys()).toEqual(['key1', 'key2', 'key3']);
+});
+
+test('for..of gives [key, value] pairs', () => {
+  LS.set('key1', '1');
+  LS.set('key2', '2');
+  LS.set('key3', '3');
+  const entries: [string, string][] = [];
+  for (const [k, v] of LS) {
+    entries.push([k, v]);
+  }
+  // sort entries by the first element using string comparison
+  entries.sort((a, b) => a[0].localeCompare(b[0]));
+  expect(LS.getLocalStorage().length).toBe(4);
+  expect(LS.keys()).toEqual(['key1', 'key2', 'key3']);
+  expect(entries).toEqual([
+    ['key1', '1'],
+    ['key2', '2'],
+    ['key3', '3'],
+  ]);
 });

@@ -85,6 +85,10 @@ export class LocalStorageLRU {
     }
   }
 
+  public getRecentKey(): string {
+    return this.recentKey;
+  }
+
   /**
    * avoid trimming more useful entries, we keep an array of recently modified keys
    */
@@ -180,11 +184,28 @@ export class LocalStorageLRU {
     }
   }
 
+  public has(key: string): boolean {
+    // we don't call this.get, because we don't want to record the usage
+    return this.ls.getItem(key) != null;
+  }
+
+  public keys(sorted = false): string[] {
+    const keys = this.ls === window.localStorage ? Object.keys(this.ls) : this.ls.keys();
+    const fkeys: string[] = keys.filter((el: string) => el !== this.recentKey);
+    if (sorted) fkeys.sort();
+    return fkeys;
+  }
+
   /**
    * Deletes key from local storage
+   *
+   * Throws an error only if you try to delete the reserved key to record recent entries.
    */
 
   public delete(key: string): void {
+    if (key === this.recentKey) {
+      throw new Error(`localStorage: Key "${this.recentKey}" is reserved.`);
+    }
     try {
       this.deleteUsage(key);
       this.ls.removeItem(key);
@@ -220,11 +241,16 @@ export class LocalStorageLRU {
   }
 
   /**
-   * number of items stored in the local storage
+   * number of items stored in the local storage – not counting the "recent key" itself
    */
   public size(): number {
     try {
-      return this.ls.length;
+      const v = this.ls.length;
+      if (this.has(this.recentKey)) {
+        return v - 1;
+      } else {
+        return v;
+      }
     } catch (e) {
       return 0;
     }
@@ -245,5 +271,26 @@ export class LocalStorageLRU {
 
   public getLocalStorage() {
     return this.ls;
+  }
+
+  /** Delete all keys with the given prefix */
+  public deletePrefix(prefix: string): void {
+    for (let i = 0; i < this.ls.length; i++) {
+      const key = this.ls.key(i);
+      if (key == null) continue;
+      if (key.startsWith(prefix) && key !== this.recentKey) {
+        this.delete(key);
+      }
+    }
+  }
+
+  public *[Symbol.iterator](): IterableIterator<[string, string]> {
+    for (const k of this.keys()) {
+      if (k === this.recentKey) continue;
+      if (k == null) continue;
+      const v = this.get(k);
+      if (v == null) continue;
+      yield [k, v];
+    }
   }
 }

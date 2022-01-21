@@ -9,7 +9,7 @@
 // This backs the localStorage via a simple dictionary and it also has a limited size.
 // It is used by @LocalStorageLRU, if fallback is true and the test if local storage works fails.
 export class LocalStorageFallback {
-  private data: Partial<{ [key: string]: string }> = {};
+  private data: { [key: string]: string } = {};
   private size: number;
 
   constructor(size = 1000) {
