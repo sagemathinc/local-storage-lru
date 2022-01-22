@@ -127,6 +127,8 @@ describe.each(modes)(`%s`, ({ fallback }) => {
     }
     expect(LS.getRecent().slice(0, 2)).toEqual(['key2', 'key1']);
     expect(LS.size()).toBeLessThan(100 + 1 - 20);
+    expect(LS.get('key1')).toBe('1');
+    expect(LS.get('key2')).toBe('2');
   });
 
   test(`${mode} candidate filter`, () => {
@@ -266,37 +268,6 @@ describe.each(modes)(`%s`, ({ fallback }) => {
     expect(check(LS.get(key))).toBe(true);
   });
 
-  test(`${mode}  as well`, () => {
-    const d = 1900494000000;
-    const n = BigInt(12300000000000000001);
-    const a = ['a', 'b', 123, { x: 1, y: 2.2 }];
-    const o = { a: 1, b: 2 };
-    const i = 12321;
-    LS.set('object', o);
-    LS.set('str[]', a);
-    LS.set('number', i);
-    LS.set('a date', new Date(d));
-    LS.set('boolean', true);
-    LS.set('null_val', null);
-    LS.set('undefined', undefined);
-    LS.set('bigint', n);
-    // test that we can load them
-    expect(LS.get('object')).toEqual(o);
-    expect(typeof LS.get('object')).toBe('object');
-    expect(LS.get('str[]')).toEqual(a);
-    expect(Array.isArray(LS.get('str[]'))).toBe(true);
-    expect(LS.get('number')).toBe(i);
-    expect(typeof LS.get('number')).toBe('number');
-    expect(LS.get('a date')).toEqual(new Date(d));
-    expect(LS.get('a date') instanceof Date).toBe(true);
-    expect(LS.get('boolean')).toBe(true);
-    expect(typeof LS.get('boolean')).toBe('boolean');
-    expect(LS.get('null_val')).toBe(null);
-    expect(LS.get('undefined')).toBe(null); // can't store undefined
-    expect(LS.get('bigint')).toBe(n);
-    expect(typeof LS.get('bigint')).toBe('bigint');
-  });
-
   test(`${mode} check serialized object uses correct prefix`, () => {
     LS.set('object', { a: 1, b: 2 });
     const val = LS.getLocalStorage().getItem('object');
@@ -321,7 +292,9 @@ describe.each(modes)(`%s`, ({ fallback }) => {
     const o = { a: 1, b: 2 };
     const os = JSON.stringify(o);
     store['baz'] = os;
-    expect(myLS.get('baz')).toEqual(o);
+    const v = myLS.get('baz');
+    expect(v).toEqual(o);
+    expect(typeof v).toBe('object');
   });
 
   test(`${mode} custom serializer/deserializer`, () => {
@@ -388,6 +361,7 @@ describe.each(modes)(`%s`, ({ fallback }) => {
     expect(store.getItem('bigint')).toBe('\x02123123123123');
   });
 
+  // number types check
   test.each`
     key    | value                       | type
     ${'a'} | ${3.1415}                   | ${'float'}
