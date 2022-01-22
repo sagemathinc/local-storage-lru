@@ -140,7 +140,7 @@ export class LocalStorageLRU {
 
     const valSer = this.serialize(val);
 
-    // we have to record the usgae of the key first!
+    // we have to record the usage of the key first!
     // otherwise, setting it first and then updating the list of recent keys
     // could delete that very key upon updating the list of recently used keys.
     this.recordUsage(key);
@@ -272,9 +272,9 @@ export class LocalStorageLRU {
 
   public keys(sorted = false): string[] {
     const keys = this.ls === window.localStorage ? Object.keys(this.ls) : this.ls.keys();
-    const fkeys: string[] = keys.filter((el: string) => el !== this.recentKey);
-    if (sorted) fkeys.sort();
-    return fkeys;
+    const filteredKeys: string[] = keys.filter((el: string) => el !== this.recentKey);
+    if (sorted) filteredKeys.sort();
+    return filteredKeys;
   }
 
   /**

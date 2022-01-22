@@ -74,7 +74,7 @@ test('recent entries after inserting', () => {
   expect(r).toEqual(['foo', 'bar']);
 });
 
-// similarly, if keys are delted, they're removed from the list of recent keys
+// similarly, if keys are deleted, they're removed from the list of recent keys
 test('recent entries after delete', () => {
   LS.set('foo', '1');
   LS.set('bar', '2');
@@ -128,14 +128,14 @@ test('candidate filter', () => {
 });
 
 test('mockup local storage', () => {
-  const myls = new LocalStorageFallback(10);
-  const ls = new LocalStorageLRU({ localStorage: myls, maxSize: 5 });
-  expect(ls.getLocalStorage()).toBe(myls);
+  const myLS = new LocalStorageFallback(10);
+  const ls = new LocalStorageLRU({ localStorage: myLS, maxSize: 5 });
+  expect(ls.getLocalStorage()).toBe(myLS);
 
   // we have to run this test many times, because recording the usage
   // of a key could cause it to be deleted before it is recorded.
   for (let trial = 0; trial < 100; trial++) {
-    myls.clear();
+    myLS.clear();
     for (let i = 0; i < 20; i++) {
       ls.set(`key${i}`, `value${i}`);
     }
@@ -144,7 +144,7 @@ test('mockup local storage', () => {
     expect(ls.get('key19')).toBe('value19');
     // older ones not
     expect(ls.getRecent().length).toBe(4);
-    expect(myls.keys().length).toBeLessThanOrEqual(10);
+    expect(myLS.keys().length).toBeLessThanOrEqual(10);
   }
 });
 
@@ -249,11 +249,23 @@ test('load/save objects as well', () => {
   LS.set('bigint', n);
   // test that we can load them
   expect(LS.get('object')).toEqual(o);
+  expect(typeof LS.get('object')).toBe('object');
   expect(LS.get('str[]')).toEqual(a);
+  expect(Array.isArray(LS.get('str[]'))).toBe(true);
   expect(LS.get('number')).toBe(i);
+  expect(typeof LS.get('number')).toBe('number');
   expect(LS.get('a date')).toEqual(new Date(d));
+  expect(LS.get('a date') instanceof Date).toBe(true);
   expect(LS.get('boolean')).toBe(true);
+  expect(typeof LS.get('boolean')).toBe('boolean');
   expect(LS.get('null_val')).toBe(null);
   expect(LS.get('undefined')).toBe(null); // can't store undefined
   expect(LS.get('bigint')).toBe(n);
+  expect(typeof LS.get('bigint')).toBe('bigint');
+});
+
+test('check serialized object uses correct prefix', () => {
+  LS.set('object', { a: 1, b: 2 });
+  const val = LS.getLocalStorage().getItem('object');
+  expect(val?.slice(0, 9)).toBe('__object\0');
 });
