@@ -11,13 +11,17 @@ import { LocalStorageFallback } from '../src/mock-ls';
 
 let LS: LocalStorageLRU;
 
+const modes = [{ fallback: false }, { fallback: true }] as const;
+
 // we check for either direct use of LocalStorageLRU or a faulty localStorage and using a fallback
-describe.each([false, true])(`fallback=(%s)`, (fallback) => {
+describe.each(modes)(`%s`, ({ fallback }) => {
   const mode = `fallback:${fallback}`;
 
   beforeEach(() => {
     localStorage.clear();
-    const props = fallback ? { fallback, localStorage: [] as any } : undefined;
+    const props = {
+      ...(fallback ? { fallback, localStorage: [] as any } : undefined),
+    };
     // this purposely sets a problematic local storage object, in order to let the fallback kick in
     LS = new LocalStorageLRU(props);
   });
@@ -243,7 +247,26 @@ describe.each([false, true])(`fallback=(%s)`, (fallback) => {
     ]);
   });
 
-  test(`${mode} load/save objects as well`, () => {
+  // this not only checks the values, but also if the type and other properties are really correct.
+  test.each`
+    key           | value                                | check
+    ${'object'}   | ${{ a: 1, b: 2 }}                    | ${(v: unknown) => typeof v === 'object'}
+    ${'str[]'}    | ${['a', 'b', 123, { x: 1, y: 2.2 }]} | ${(v: unknown) => Array.isArray(v)}
+    ${'nested'}   | ${{ a: { b: { c: 'd' } } }}          | ${(v: unknown) => typeof v === 'object'}
+    ${'number'}   | ${123}                               | ${(v: unknown) => typeof v === 'number'}
+    ${'negative'} | ${-123}                              | ${(v: unknown) => typeof v === 'number'}
+    ${'NaN'}      | ${NaN}                               | ${(v: unknown) => typeof v === 'number' && isNaN(v)}
+    ${'a_date'}   | ${new Date(1900494000000)}           | ${(v: unknown) => v instanceof Date && v.getTime() === 1900494000000}
+    ${'boolean'}  | ${true}                              | ${(v: unknown) => typeof v === 'boolean' && v === true}
+    ${'null_val'} | ${null}                              | ${(v: unknown) => v === null}
+    ${'bigint'}   | ${BigInt(123)}                       | ${(v: unknown) => typeof v === 'bigint' && v === BigInt(123)}
+  `(`${mode} load/save types $key=$value`, ({ key, value, check }) => {
+    LS.set(key, value);
+    expect(LS.get(key)).toEqual(value);
+    expect(check(LS.get(key))).toBe(true);
+  });
+
+  test(`${mode}  as well`, () => {
     const d = 1900494000000;
     const n = BigInt(12300000000000000001);
     const a = ['a', 'b', 123, { x: 1, y: 2.2 }];
@@ -277,7 +300,7 @@ describe.each([false, true])(`fallback=(%s)`, (fallback) => {
   test(`${mode} check serialized object uses correct prefix`, () => {
     LS.set('object', { a: 1, b: 2 });
     const val = LS.getLocalStorage().getItem('object');
-    expect(val?.slice(0, 9)).toBe('__object\0');
+    expect(val?.slice(0, 9)).toBe('\x00\x03object\0');
   });
 
   test(`${mode} do not break existing string values`, () => {
@@ -333,8 +356,8 @@ describe.each([false, true])(`fallback=(%s)`, (fallback) => {
     myLS.set('obj', o);
     expect(myLS.get('arr')).toEqual(a);
     expect(myLS.get('obj')).toEqual(o);
-    expect(store.getItem('arr')).toBe('__object\x00arr1\x00333\x002\x003');
-    expect(store.getItem('obj')).toBe('__object\x00obj{"a":1,"b":2}');
+    expect(store.getItem('arr')).toBe('\x00\x03object\x00arr1\x00333\x002\x003');
+    expect(store.getItem('obj')).toBe('\x00\x03object\x00obj{"a":1,"b":2}');
   });
 
   // in case you want to live on the edge:
@@ -343,9 +366,11 @@ describe.each([false, true])(`fallback=(%s)`, (fallback) => {
     const myLS = new LocalStorageLRU({
       typePrefixDelimiter: '',
       typePrefixes: {
-        bigint: '\x00',
-        object: '\x02',
         date: '\x01',
+        bigint: '\x02',
+        object: '\x03',
+        int: '\x04',
+        float: '\x05',
       },
     });
     const store = myLS.getLocalStorage();
@@ -357,9 +382,28 @@ describe.each([false, true])(`fallback=(%s)`, (fallback) => {
     expect(myLS.get('str')).toBe('foo');
     expect(myLS.get('date')).toEqual(new Date(123123123123));
     expect(myLS.get('bigint')).toBe(BigInt(123123123123));
-    expect(store.getItem('obj')).toBe('\x02{"a":1,"b":2}');
+    expect(store.getItem('obj')).toBe('\x03{"a":1,"b":2}');
     expect(store.getItem('str')).toBe('foo');
     expect(store.getItem('date')).toBe('\x01123123123123');
-    expect(store.getItem('bigint')).toBe('\x00123123123123');
+    expect(store.getItem('bigint')).toBe('\x02123123123123');
+  });
+
+  test.each`
+    key    | value                       | type
+    ${'a'} | ${3.1415}                   | ${'float'}
+    ${'b'} | ${1231}                     | ${'int'}
+    ${'c'} | ${NaN}                      | ${'float'}
+    ${'d'} | ${Infinity}                 | ${'float'}
+    ${'e'} | ${Number.NEGATIVE_INFINITY} | ${'float'}
+    ${'f'} | ${Number.EPSILON}           | ${'float'}
+    ${'g'} | ${Number.MAX_SAFE_INTEGER}  | ${'int'}
+    ${'h'} | ${Number.MIN_SAFE_INTEGER}  | ${'int'}
+  `(`${mode} support numbers: $key`, ({ key, value, type }) => {
+    LS.set(key, value);
+    expect(LS.get(key)).toBe(value);
+    const t = type === 'int' ? '\x00\x04int\x00' : '\x00\x05float\x00';
+    console.log(LS.getLocalStorage().getItem(key));
+    console.log(t);
+    expect(LS.getLocalStorage().getItem(key)!.startsWith(t)).toBe(true);
   });
 });

@@ -13,14 +13,18 @@ export interface TypePrefixes {
   date: string;
   bigint: string;
   object: string;
+  int: string;
+  float: string;
 }
 
 // additionally, each one of them gets `typePrefixDelimiter` as a postfix,
 // to further distinguish them from other (pure string) values.
 const DEFAULT_TYPE_PREFIXES: TypePrefixes = {
-  date: '__date',
-  bigint: '__bigint',
-  object: '__object',
+  date: '\x00\x01date',
+  bigint: '\x00\x02bigint',
+  object: '\x00\x03object',
+  int: '\x00\x04int',
+  float: '\x00\x05float',
 } as const;
 
 interface Props {
@@ -73,7 +77,7 @@ export class LocalStorageLRU {
   private initLocalStorage(props?: Props): Storage {
     const { fallback = false, localStorage } = props ?? {};
 
-    let lsProposed: Storage | undefined = undefined;
+    let lsProposed: Storage | undefined;
     try {
       lsProposed = localStorage ?? window?.localStorage;
     } catch {}
@@ -94,6 +98,8 @@ export class LocalStorageLRU {
       date: `${typePrefixes?.date ?? DEFAULT_TYPE_PREFIXES.date}${delim}`,
       bigint: `${typePrefixes?.bigint ?? DEFAULT_TYPE_PREFIXES.bigint}${delim}`,
       object: `${typePrefixes?.object ?? DEFAULT_TYPE_PREFIXES.object}${delim}`,
+      int: `${typePrefixes?.int ?? DEFAULT_TYPE_PREFIXES.int}${delim}`,
+      float: `${typePrefixes?.float ?? DEFAULT_TYPE_PREFIXES.float}${delim}`,
     };
   }
 
@@ -110,6 +116,10 @@ export class LocalStorageLRU {
   private serialize(val: unknown): string {
     if (typeof val === 'string') {
       return val;
+    } else if (Number.isInteger(val)) {
+      return `${this.typePrefixes.int}${val}`;
+    } else if (typeof val === 'number') {
+      return `${this.typePrefixes.float}${val}`;
     } else if (val instanceof Date) {
       return `${this.typePrefixes.date}${val.valueOf()}`;
     } else if (typeof val === 'bigint') {
@@ -125,7 +135,7 @@ export class LocalStorageLRU {
    * this deserializes the value. As a fallback, it optionally tries
    * to use JSON.parse. If everything fails, the plain string value is returned.
    */
-  private deserialize(ser: string | null): string | object | BigInt | null {
+  private deserialize(ser: string | null): any {
     if (ser === null) {
       return null;
     }
@@ -138,11 +148,24 @@ export class LocalStorageLRU {
         } catch {
           return s;
         }
+      } else if (ser.startsWith(this.typePrefixes.int)) {
+        const s = ser.slice(this.typePrefixes.int.length);
+        try {
+          return parseInt(s, 10);
+        } catch {
+          return s;
+        }
+      } else if (ser.startsWith(this.typePrefixes.float)) {
+        const s = ser.slice(this.typePrefixes.float.length);
+        try {
+          return parseFloat(s);
+        } catch {
+          return s;
+        }
       } else if (ser.startsWith(this.typePrefixes.date)) {
         const tsStr = ser.slice(this.typePrefixes.date.length);
         try {
-          const ts = parseInt(tsStr, 10);
-          return new Date(ts);
+          return new Date(parseInt(tsStr, 10));
         } catch {
           return tsStr; // we return the string if we can't parse it
         }
