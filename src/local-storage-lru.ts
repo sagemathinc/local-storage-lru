@@ -27,6 +27,7 @@ interface Props {
   fallback?: boolean; // if true, use a memory-backed object to store the data
   serializer?: (data: any) => string; // custom serializer, default JSON.stringify
   deserializer?: (ser: string) => any; // custom de-serializer, default JSON.parse
+  parseExistingJSON?: boolean; // if true, attempt to parse already existing JSON in localStorage
   typePrefixes?: TypePrefixes; // custom type prefixes
   typePrefixDelimiter?: string; // the string delimiting the type prefix and the value
 }
@@ -47,6 +48,7 @@ export class LocalStorageLRU {
   private readonly deserializer: (ser: string) => any;
   private readonly typePrefixes: TypePrefixes;
   private readonly typePrefixDelimiter: string;
+  private readonly parseExistingJSON: boolean;
 
   constructor(props?: Props) {
     this.maxSize = props?.maxSize ?? 64;
@@ -56,6 +58,7 @@ export class LocalStorageLRU {
     this.ls = props?.localStorage ?? window.localStorage;
     this.serializer = props?.serializer ?? JSON.stringify;
     this.deserializer = props?.deserializer ?? JSON.parse;
+    this.parseExistingJSON = props?.parseExistingJSON ?? false;
     this.typePrefixDelimiter = props?.typePrefixDelimiter ?? '\0';
     this.typePrefixes = this.preparePrefixes(props?.typePrefixes);
     const fallback = props?.fallback ?? false;
@@ -97,6 +100,7 @@ export class LocalStorageLRU {
     if (ser === null) {
       return null;
     }
+
     try {
       if (ser.startsWith(this.typePrefixes.object)) {
         const s = ser.slice(this.typePrefixes.object.length);
@@ -122,6 +126,14 @@ export class LocalStorageLRU {
         }
       }
     } catch {}
+
+    // optionally, it tries to parse existing JSON values – they'll be stored with a prefix when saved again
+    if (this.parseExistingJSON) {
+      try {
+        return JSON.parse(ser);
+      } catch {}
+    }
+
     // most likely a plain string
     return ser;
   }

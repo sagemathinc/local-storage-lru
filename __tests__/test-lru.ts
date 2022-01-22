@@ -269,3 +269,24 @@ test('check serialized object uses correct prefix', () => {
   const val = LS.getLocalStorage().getItem('object');
   expect(val?.slice(0, 9)).toBe('__object\0');
 });
+
+test('do not break existing string values', () => {
+  const store = LS.getLocalStorage();
+  store['foo'] = 'bar';
+  expect(LS.get('foo')).toBe('bar');
+  LS.set('bar', 'foo');
+  expect(store['bar']).toBe('foo');
+  // even if they're serialized JSON
+  const o = JSON.stringify({ a: 1, b: 2 });
+  store['baz'] = o;
+  expect(LS.get('baz')).toEqual(o);
+});
+
+test('optionally, try json-parsing existing strings', () => {
+  const myLS = new LocalStorageLRU({ parseExistingJSON: true });
+  const store = myLS.getLocalStorage();
+  const o = { a: 1, b: 2 };
+  const os = JSON.stringify(o);
+  store['baz'] = os;
+  expect(myLS.get('baz')).toEqual(o);
+});

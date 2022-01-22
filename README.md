@@ -1,10 +1,10 @@
 # LRU Cache for Browser's Local Storage
 
 [![npm version](https://badge.fury.io/js/@cocalc%2Flocal-storage-lru.svg)](https://badge.fury.io/js/@cocalc%2Flocal-storage-lru)
-![Statements](https://img.shields.io/badge/statements-83.72%25-yellow.svg?style=flat)
-![Branches](https://img.shields.io/badge/branches-88.7%25-yellow.svg?style=flat)
-![Functions](https://img.shields.io/badge/functions-97.05%25-brightgreen.svg?style=flat)
-![Lines](https://img.shields.io/badge/lines-83.03%25-yellow.svg?style=flat)
+![Statements](https://img.shields.io/badge/statements-84.04%25-yellow.svg?style=flat)
+![Branches](https://img.shields.io/badge/branches-86.93%25-yellow.svg?style=flat)
+![Functions](https://img.shields.io/badge/functions-97.14%25-brightgreen.svg?style=flat)
+![Lines](https://img.shields.io/badge/lines-83.42%25-yellow.svg?style=flat)
 
 ## WARNING: this is an experimental implementation
 
@@ -25,12 +25,11 @@ Then try again storing the new value.
 - The entire overhead is _one_ additional key/value pair storing the pointers to these LRU keys.
 - The keys and values you try to store are not modified.
 
-
 ## Design Goals
 
 - **robust**: no exceptions are thrown (only if there is a problematic key)
 - **universal**: also supports storing objects, `Date`, `BigInt`, arrays etc..
-- **backwards compatible**: if you already store string values, they're not modified!
+- **backwards compatible**: if you already store string values, they're not modified. You can even tell it to attempt parsing existing JSON values.
 
 ## Usage
 
@@ -44,8 +43,9 @@ Options:
 - `fallback` (optional, default `false`): if `true`, `localStorage` is checked if it works. If not, data is stored in a mockup storage with limited space.
 - `serializer` (optional): by default `JSON.stringify`, but you can use your own.
 - `deserializer` (optional): counterpart to the above, by default `JSON.parse`.
+- `parseExistingJSON` (optional): if `true`, it tries to deserialize already existing JSON values.
 - `typePrefixes` (optional): prefixes to serialized values if they're not stored a strings – somehow, we have to mark values if they are a complex object...
-- `typePrefixDelimiter` (optional): string appended to each `typePrefix`  to separate from the seraliazed value – default: `\0`
+- `typePrefixDelimiter` (optional): string appended to each `typePrefix` to separate from the serialized value – default: `\0`
 
 ```{javascript}
 // simple:
