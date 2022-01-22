@@ -1,10 +1,10 @@
 # LRU Cache for Browser's Local Storage
 
 [![npm version](https://badge.fury.io/js/@cocalc%2Flocal-storage-lru.svg)](https://badge.fury.io/js/@cocalc%2Flocal-storage-lru)
-![Statements](https://img.shields.io/badge/statements-84.61%25-yellow.svg?style=flat)
-![Branches](https://img.shields.io/badge/branches-92.02%25-brightgreen.svg?style=flat)
-![Functions](https://img.shields.io/badge/functions-97.14%25-brightgreen.svg?style=flat)
-![Lines](https://img.shields.io/badge/lines-84.04%25-yellow.svg?style=flat)
+![Statements](https://img.shields.io/badge/statements-84.57%25-yellow.svg?style=flat)
+![Branches](https://img.shields.io/badge/branches-90.81%25-brightgreen.svg?style=flat)
+![Functions](https://img.shields.io/badge/functions-100%25-brightgreen.svg?style=flat)
+![Lines](https://img.shields.io/badge/lines-84.02%25-yellow.svg?style=flat)
 
 ## WARNING: this is an experimental implementation
 
@@ -67,12 +67,24 @@ const storage = new LocalStorageLRU({
 });
 ```
 
-For more, check out the [tests](__tests__/test-lru.ts).
-
 ```{javascript}
+// set/get/delete
 storage.set('foo', 'bar');
 storage.get('foo') == 'bar'; // true
+storage.delete('foo');
+
+// iterate
+storage.set('key1', '1');
+storage.set('key2', '2');
+storage.set('key3', '3');
+const entries: [string, any][] = [];
+for (const [k, v] of storage) {
+  entries.push([k, v]);
+}
+entries // equals: [[ 'key1', '1' ], [ 'key2', '2' ], [ 'key3', '3' ]]
 ```
+
+For more, check out the [tests](__tests__/test-lru.ts).
 
 ## Development
 

@@ -4,6 +4,9 @@
  * Licensed under the Apache License, Version 2.0
  */
 
+// declare window.localStorage for node.js
+declare const window: { localStorage: Storage };
+
 import { LocalStorageFallback } from './mock-ls';
 
 export interface TypePrefixes {
@@ -59,15 +62,29 @@ export class LocalStorageLRU {
     this.isCandidate = props?.isCandidate;
     this.recentKey = props?.recentKey ?? '__recent';
     this.delimiter = props?.delimiter ?? '\0';
-    this.ls = props?.localStorage ?? localStorage;
     this.serializer = props?.serializer ?? JSON.stringify;
     this.deserializer = props?.deserializer ?? JSON.parse;
     this.parseExistingJSON = props?.parseExistingJSON ?? false;
     this.typePrefixDelimiter = props?.typePrefixDelimiter ?? '\0';
     this.typePrefixes = this.preparePrefixes(props?.typePrefixes);
-    const fallback = props?.fallback ?? false;
-    if (fallback && !LocalStorageLRU.testLocalStorage(this.ls)) {
-      this.ls = new LocalStorageFallback(1000);
+    this.ls = this.initLocalStorage(props);
+  }
+
+  private initLocalStorage(props?: Props): Storage {
+    const { fallback = false, localStorage } = props ?? {};
+
+    let lsProposed: Storage | undefined = undefined;
+    try {
+      lsProposed = localStorage ?? window?.localStorage;
+    } catch {}
+
+    if (lsProposed != null) {
+      if (fallback && !LocalStorageLRU.testLocalStorage(lsProposed)) {
+        return new LocalStorageFallback(1000);
+      }
+      return lsProposed;
+    } else {
+      return new LocalStorageFallback(1000);
     }
   }
 
@@ -277,7 +294,7 @@ export class LocalStorageLRU {
     if (this.size() === 0) return;
     // delete a maximum of 10 entries
     let num = Math.min(this.size(), 10);
-    const keys = this.ls === localStorage ? Object.keys(this.ls) : this.ls.keys();
+    const keys = this.keys();
     // only get recent once, more efficient
     const recent = this.getRecent();
     // attempt deleting those entries up to 20 times
@@ -300,7 +317,7 @@ export class LocalStorageLRU {
   }
 
   public keys(sorted = false): string[] {
-    const keys = this.ls === localStorage ? Object.keys(this.ls) : this.ls.keys();
+    const keys = this.ls instanceof LocalStorageFallback ? this.ls.keys() : Object.keys(this.ls);
     const filteredKeys: string[] = keys.filter((el: string) => el !== this.recentKey);
     if (sorted) filteredKeys.sort();
     return filteredKeys;
