@@ -12,7 +12,7 @@ import { LocalStorageFallback } from '../src/mock-ls';
 let LS: LocalStorageLRU;
 
 beforeEach(() => {
-  window.localStorage.clear();
+  localStorage.clear();
   // this purposely sets a problematic local storage object, in order to let the fallback kick in
   LS = new LocalStorageLRU({ fallback: true, localStorage: [] as any });
 });

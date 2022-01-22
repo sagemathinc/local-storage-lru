@@ -12,7 +12,7 @@ import { LocalStorageFallback } from '../src/mock-ls';
 let LS: LocalStorageLRU;
 
 beforeEach(() => {
-  window.localStorage.clear();
+  localStorage.clear();
   LS = new LocalStorageLRU();
 });
 
@@ -39,7 +39,7 @@ test('max size', () => {
 test('test custom recent key', () => {
   const ls = new LocalStorageLRU({ recentKey: 'myKey' });
   ls.set('foo', '123');
-  expect(window.localStorage['myKey']).toBe('foo');
+  expect(localStorage['myKey']).toBe('foo');
 });
 
 test('fail if trying to set with the key of the recent list', () => {
@@ -55,7 +55,7 @@ test('customize the delimiter string', () => {
   const ls = new LocalStorageLRU({ delimiter: '::' });
   ls.set('foo', '1');
   ls.set('bar', '2');
-  expect(window.localStorage['__recent']).toBe('bar::foo');
+  expect(localStorage['__recent']).toBe('bar::foo');
   expect(() => ls.set('1::2', '3')).toThrow('localStorage: Cannot use "::" as a character in a key');
 });
 
@@ -155,7 +155,7 @@ test('clearing', () => {
 });
 
 test('use main implementation', () => {
-  expect(LS.getLocalStorage()).toBe(window.localStorage);
+  expect(LS.getLocalStorage()).toBe(localStorage);
 });
 
 test('localStorageTest', () => {
@@ -289,4 +289,66 @@ test('optionally, try json-parsing existing strings', () => {
   const os = JSON.stringify(o);
   store['baz'] = os;
   expect(myLS.get('baz')).toEqual(o);
+});
+
+test('custom serializer/deserializer', () => {
+  function ser(val: any) {
+    if (Array.isArray(val)) {
+      return 'arr' + val.join('\0');
+    } else {
+      return 'obj' + JSON.stringify(val);
+    }
+  }
+
+  function toInt(i: string): number | string {
+    try {
+      return parseInt(i, 10);
+    } catch {
+      return i;
+    }
+  }
+
+  function des(val: string): any {
+    if (val.startsWith('arr')) {
+      return val.slice(3).split('\0').map(toInt);
+    } else {
+      return JSON.parse(val.slice(3));
+    }
+  }
+  const myLS = new LocalStorageLRU({ serializer: ser, deserializer: des });
+  const store = myLS.getLocalStorage();
+  const a = [1, 333, 2, 3];
+  const o = { a: 1, b: 2 };
+  myLS.set('arr', a);
+  myLS.set('obj', o);
+  expect(myLS.get('arr')).toEqual(a);
+  expect(myLS.get('obj')).toEqual(o);
+  expect(store.getItem('arr')).toBe('__object\x00arr1\x00333\x002\x003');
+  expect(store.getItem('obj')).toBe('__object\x00obj{"a":1,"b":2}');
+});
+
+// in case you want to live on the edge:
+// this optimizes the used storage space: no delimiter, just one unicode char at the beginning...
+test('custom typePrefixes and no delimiter', () => {
+  const myLS = new LocalStorageLRU({
+    typePrefixDelimiter: '',
+    typePrefixes: {
+      bigint: '\x00',
+      object: '\x02',
+      date: '\x01',
+    },
+  });
+  const store = myLS.getLocalStorage();
+  myLS.set('obj', { a: 1, b: 2 });
+  myLS.set('str', 'foo');
+  myLS.set('date', new Date(123123123123));
+  myLS.set('bigint', BigInt(123123123123));
+  expect(myLS.get('obj')).toEqual({ a: 1, b: 2 });
+  expect(myLS.get('str')).toBe('foo');
+  expect(myLS.get('date')).toEqual(new Date(123123123123));
+  expect(myLS.get('bigint')).toBe(BigInt(123123123123));
+  expect(store.getItem('obj')).toBe('\x02{"a":1,"b":2}');
+  expect(store.getItem('str')).toBe('foo');
+  expect(store.getItem('date')).toBe('\x01123123123123');
+  expect(store.getItem('bigint')).toBe('\x00123123123123');
 });

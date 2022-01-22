@@ -12,6 +12,8 @@ export interface TypePrefixes {
   object: string;
 }
 
+// additionally, each one of them gets `typePrefixDelimiter` as a postfix,
+// to further distinguish them from other (pure string) values.
 const DEFAULT_TYPE_PREFIXES: TypePrefixes = {
   date: '__date',
   bigint: '__bigint',
@@ -23,7 +25,7 @@ interface Props {
   isCandidate?: (key: string, recent: string[]) => boolean;
   recentKey?: string; // the key used to store the list of recently used keys
   delimiter?: string; // the delimiter used to separate keys in the recent list – default \0
-  localStorage?: typeof window.localStorage; // only used for testing
+  localStorage?: Storage; // only used for testing
   fallback?: boolean; // if true, use a memory-backed object to store the data
   serializer?: (data: any) => string; // custom serializer, default JSON.stringify
   deserializer?: (ser: string) => any; // custom de-serializer, default JSON.parse
@@ -37,13 +39,15 @@ interface Props {
  * You will no longer end up with random exceptions upon setting a key/value pair.
  * Instead, if there is a problem, it will remove a few entries and tries setting the value again.
  * Recently used entries won't be removed and you can also specify a function to filter potential candidates for deletion.
+ *
+ * **Important** do not use index accessors – use `get` and `set` instead.
  */
 export class LocalStorageLRU {
   private readonly maxSize: number;
   private readonly isCandidate?: (key: string, recent: string[]) => boolean;
   private readonly recentKey: string;
   private readonly delimiter: string;
-  private readonly ls: typeof window.localStorage;
+  private readonly ls: Storage;
   private readonly serializer: (data: any) => string;
   private readonly deserializer: (ser: string) => any;
   private readonly typePrefixes: TypePrefixes;
@@ -55,7 +59,7 @@ export class LocalStorageLRU {
     this.isCandidate = props?.isCandidate;
     this.recentKey = props?.recentKey ?? '__recent';
     this.delimiter = props?.delimiter ?? '\0';
-    this.ls = props?.localStorage ?? window.localStorage;
+    this.ls = props?.localStorage ?? localStorage;
     this.serializer = props?.serializer ?? JSON.stringify;
     this.deserializer = props?.deserializer ?? JSON.parse;
     this.parseExistingJSON = props?.parseExistingJSON ?? false;
@@ -83,6 +87,9 @@ export class LocalStorageLRU {
     return this.maxSize;
   }
 
+  /**
+   * specific types are serialized with a prefix, while plain strings are stored as they are.
+   */
   private serialize(val: unknown): string {
     if (typeof val === 'string') {
       return val;
@@ -96,6 +103,11 @@ export class LocalStorageLRU {
     return `${this.typePrefixes.object}${this.serializer(val)}`;
   }
 
+  /**
+   * Each value in localStorage is a string. For specific prefixes,
+   * this deserializes the value. As a fallback, it optionally tries
+   * to use JSON.parse. If everything fails, the plain string value is returned.
+   */
   private deserialize(ser: string | null): string | object | BigInt | null {
     if (ser === null) {
       return null;
@@ -129,6 +141,11 @@ export class LocalStorageLRU {
 
     // optionally, it tries to parse existing JSON values – they'll be stored with a prefix when saved again
     if (this.parseExistingJSON) {
+      try {
+        if (this.deserialize !== JSON.parse) {
+          return this.deserialize(ser);
+        }
+      } catch {}
       try {
         return JSON.parse(ser);
       } catch {}
@@ -260,7 +277,7 @@ export class LocalStorageLRU {
     if (this.size() === 0) return;
     // delete a maximum of 10 entries
     let num = Math.min(this.size(), 10);
-    const keys = this.ls === window.localStorage ? Object.keys(this.ls) : this.ls.keys();
+    const keys = this.ls === localStorage ? Object.keys(this.ls) : this.ls.keys();
     // only get recent once, more efficient
     const recent = this.getRecent();
     // attempt deleting those entries up to 20 times
@@ -283,7 +300,7 @@ export class LocalStorageLRU {
   }
 
   public keys(sorted = false): string[] {
-    const keys = this.ls === window.localStorage ? Object.keys(this.ls) : this.ls.keys();
+    const keys = this.ls === localStorage ? Object.keys(this.ls) : this.ls.keys();
     const filteredKeys: string[] = keys.filter((el: string) => el !== this.recentKey);
     if (sorted) filteredKeys.sort();
     return filteredKeys;
