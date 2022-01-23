@@ -7,7 +7,7 @@
  */
 
 import { LocalStorageLRU } from '../src/index';
-import { LocalStorageFallback } from '../src/mock-ls';
+import { LocalStorageFallback } from '../src/local-storage-fallback';
 
 let LS: LocalStorageLRU;
 
@@ -26,6 +26,12 @@ describe.each(modes)(`%s`, ({ fallback }) => {
     LS = new LocalStorageLRU(props);
   });
 
+  test('confirm jsdom mode', () => {
+    expect(global['document']).not.toBeUndefined();
+    const element = document.createElement('div');
+    expect(element).not.toBeNull();
+  });
+
   test(`${mode} uses fallback implementation`, () => {
     if (fallback) {
       expect(LS.getLocalStorage() instanceof LocalStorageFallback).toBe(true);
@@ -35,7 +41,7 @@ describe.each(modes)(`%s`, ({ fallback }) => {
   });
 
   test(`${mode} have local storage`, () => {
-    expect(LS.localStorageWorks()).toBe(true);
+    expect(LS.localStorageIsAvailable()).toBe(true);
   });
 
   test(`${mode} default size`, () => {
@@ -82,6 +88,11 @@ describe.each(modes)(`%s`, ({ fallback }) => {
     expect(LS.get('foo')).toBe('bar');
   });
 
+  test(`${mode} cleared by beforeEach`, () => {
+    // including __recent!
+    expect(LS.getLocalStorage().length).toBe(0);
+  });
+
   // this is the first real test: it checks if after saving several items,
   // the list of recent keys is correct
   test(`${mode} recent entries after inserting`, () => {
@@ -120,7 +131,7 @@ describe.each(modes)(`%s`, ({ fallback }) => {
     expect(LS.size()).toBe(100);
     LS['trimOldEntries']();
     expect(LS.size()).toBeLessThanOrEqual(100 + 1);
-    expect(LS.size()).toBeGreaterThanOrEqual(100 + 1 - 10);
+    expect(LS.size()).toBeGreaterThanOrEqual(100 - 10);
     expect(LS.getRecent().slice(0, 2)).toEqual(['key2', 'key1']);
     for (let i = 0; i < 101; i++) {
       LS['trimOldEntries']();
@@ -361,23 +372,35 @@ describe.each(modes)(`%s`, ({ fallback }) => {
     expect(store.getItem('bigint')).toBe('\x02123123123123');
   });
 
+  test(`${mode} all prefixes must be unique`, () => {
+    expect(() => {
+      new LocalStorageLRU({
+        typePrefixes: {
+          date: '\x01',
+          bigint: '\x02',
+          object: '\x03',
+          int: '\x01',
+          float: '\x05',
+        },
+      });
+    }).toThrowError('all type prefixes must be distinct');
+  });
+
   // number types check
   test.each`
-    key    | value                       | type
-    ${'a'} | ${3.1415}                   | ${'float'}
-    ${'b'} | ${1231}                     | ${'int'}
-    ${'c'} | ${NaN}                      | ${'float'}
-    ${'d'} | ${Infinity}                 | ${'float'}
-    ${'e'} | ${Number.NEGATIVE_INFINITY} | ${'float'}
-    ${'f'} | ${Number.EPSILON}           | ${'float'}
-    ${'g'} | ${Number.MAX_SAFE_INTEGER}  | ${'int'}
-    ${'h'} | ${Number.MIN_SAFE_INTEGER}  | ${'int'}
+    key            | value                       | type
+    ${'float'}     | ${3.1415}                   | ${'float'}
+    ${'int'}       | ${1231}                     | ${'int'}
+    ${'NaN'}       | ${NaN}                      | ${'float'}
+    ${'infinity'}  | ${Infinity}                 | ${'float'}
+    ${'-infinity'} | ${Number.NEGATIVE_INFINITY} | ${'float'}
+    ${'epsilon'}   | ${Number.EPSILON}           | ${'float'}
+    ${'max-safe'}  | ${Number.MAX_SAFE_INTEGER}  | ${'int'}
+    ${'min-safe'}  | ${Number.MIN_SAFE_INTEGER}  | ${'int'}
   `(`${mode} support numbers: $key`, ({ key, value, type }) => {
     LS.set(key, value);
     expect(LS.get(key)).toBe(value);
     const t = type === 'int' ? '\x00\x04int\x00' : '\x00\x05float\x00';
-    console.log(LS.getLocalStorage().getItem(key));
-    console.log(t);
     expect(LS.getLocalStorage().getItem(key)!.startsWith(t)).toBe(true);
   });
 });

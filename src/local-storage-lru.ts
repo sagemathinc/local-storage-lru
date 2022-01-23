@@ -7,15 +7,8 @@
 // declare window.localStorage for node.js
 declare const window: { localStorage: Storage };
 
-import { LocalStorageFallback } from './mock-ls';
-
-export interface TypePrefixes {
-  date: string;
-  bigint: string;
-  object: string;
-  int: string;
-  float: string;
-}
+import { LocalStorageFallback } from './local-storage-fallback';
+import { Props, TypePrefixes } from './types';
 
 // additionally, each one of them gets `typePrefixDelimiter` as a postfix,
 // to further distinguish them from other (pure string) values.
@@ -26,20 +19,6 @@ const DEFAULT_TYPE_PREFIXES: TypePrefixes = {
   int: '\x00\x04int',
   float: '\x00\x05float',
 } as const;
-
-interface Props {
-  maxSize?: number; // how many most recently used keys are tracked
-  isCandidate?: (key: string, recent: string[]) => boolean;
-  recentKey?: string; // the key used to store the list of recently used keys
-  delimiter?: string; // the delimiter used to separate keys in the recent list – default \0
-  localStorage?: Storage; // only used for testing
-  fallback?: boolean; // if true, use a memory-backed object to store the data
-  serializer?: (data: any) => string; // custom serializer, default JSON.stringify
-  deserializer?: (ser: string) => any; // custom de-serializer, default JSON.parse
-  parseExistingJSON?: boolean; // if true, attempt to parse already existing JSON in localStorage
-  typePrefixes?: TypePrefixes; // custom type prefixes
-  typePrefixDelimiter?: string; // the string delimiting the type prefix and the value
-}
 
 /**
  * Use an instance of this class to access localStorage – instead of using it directly.
@@ -71,6 +50,7 @@ export class LocalStorageLRU {
     this.parseExistingJSON = props?.parseExistingJSON ?? false;
     this.typePrefixDelimiter = props?.typePrefixDelimiter ?? '\0';
     this.typePrefixes = this.preparePrefixes(props?.typePrefixes);
+    this.checkPrefixes();
     this.ls = this.initLocalStorage(props);
   }
 
@@ -101,6 +81,15 @@ export class LocalStorageLRU {
       int: `${typePrefixes?.int ?? DEFAULT_TYPE_PREFIXES.int}${delim}`,
       float: `${typePrefixes?.float ?? DEFAULT_TYPE_PREFIXES.float}${delim}`,
     };
+  }
+
+  private checkPrefixes() {
+    // during init, we check that all values of typePrefixes are unique
+    const prefixes = Object.values(this.typePrefixes);
+    const uniqueValues = new Set(prefixes);
+    if (prefixes.length !== uniqueValues.size) {
+      throw new Error('all type prefixes must be distinct');
+    }
   }
 
   /**
@@ -367,7 +356,7 @@ export class LocalStorageLRU {
   /**
    * Returns true, if we can store something in local storage at all.
    */
-  public localStorageWorks(): boolean {
+  public localStorageIsAvailable(): boolean {
     return LocalStorageLRU.testLocalStorage(this.ls);
   }
 

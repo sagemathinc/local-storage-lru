@@ -6,8 +6,8 @@
  * @jest-environment jsdom
  */
 
-// This backs the localStorage via a simple dictionary and it also has a limited size.
-// It is used by @LocalStorageLRU, if fallback is true and the test if local storage works fails.
+// This backs the localStorage via a simple in-memory dictionary and it also has a limited size.
+// It is used by @LocalStorageLRU, if fallback is true and the test if local storage is available fails.
 export class LocalStorageFallback {
   private data: { [key: string]: string } = {};
   private size: number;
