@@ -2,10 +2,8 @@
 
 [![npm version](https://badge.fury.io/js/@cocalc%2Flocal-storage-lru.svg)](https://badge.fury.io/js/@cocalc%2Flocal-storage-lru)
 [![Node.js CI](https://github.com/sagemathinc/local-storage-lru/actions/workflows/node.js.yml/badge.svg)](https://github.com/sagemathinc/local-storage-lru/actions/workflows/node.js.yml)
-![Statements](https://img.shields.io/badge/statements-84.86%25-yellow.svg?style=flat)
-![Branches](https://img.shields.io/badge/branches-91.94%25-brightgreen.svg?style=flat)
 ![Functions](https://img.shields.io/badge/functions-100%25-brightgreen.svg?style=flat)
-![Lines](https://img.shields.io/badge/lines-84.36%25-yellow.svg?style=flat)
+![Branches](https://img.shields.io/badge/branches-91.94%25-brightgreen.svg?style=flat)
 
 ## WARNING: this is an experimental implementation
 
