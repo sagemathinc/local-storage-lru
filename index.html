@@ -1,0 +1,83 @@
+<!DOCTYPE html><html class="default"><head><meta charSet="utf-8"/><meta http-equiv="x-ua-compatible" content="IE=edge"/><title>@cocalc/local-storage-lru</title><meta name="description" content="Documentation for @cocalc/local-storage-lru"/><meta name="viewport" content="width=device-width, initial-scale=1"/><link rel="stylesheet" href="assets/style.css"/><link rel="stylesheet" href="assets/highlight.css"/><script async src="assets/search.js" id="search-script"></script></head><body><script>document.body.classList.add(localStorage.getItem("tsd-theme") || "os")</script><header><div class="tsd-page-toolbar"><div class="container"><div class="table-wrap"><div class="table-cell" id="tsd-search" data-base="."><div class="field"><label for="tsd-search-field" class="tsd-widget search no-caption">Search</label><input type="text" id="tsd-search-field"/></div><ul class="results"><li class="state loading">Preparing search index...</li><li class="state failure">The search index is not available</li></ul><a href="index.html" class="title">@cocalc/local-storage-lru</a></div><div class="table-cell" id="tsd-widgets"><div id="tsd-filter"><a href="#" class="tsd-widget options no-caption" data-toggle="options">Options</a><div class="tsd-filter-group"><div class="tsd-select" id="tsd-filter-visibility"><span class="tsd-select-label">All</span><ul class="tsd-select-list"><li data-value="public">Public</li><li data-value="protected">Public/Protected</li><li data-value="private" class="selected">All</li></ul></div> <input type="checkbox" id="tsd-filter-inherited" checked/><label class="tsd-widget" for="tsd-filter-inherited">Inherited</label><input type="checkbox" id="tsd-filter-externals" checked/><label class="tsd-widget" for="tsd-filter-externals">Externals</label></div></div><a href="#" class="tsd-widget menu no-caption" data-toggle="menu">Menu</a></div></div></div></div><div class="tsd-page-title"><div class="container"><h1>@cocalc/local-storage-lru</h1></div></div></header><div class="container container-main"><div class="row"><div class="col-8 col-content"><div class="tsd-panel tsd-typography">
+<a href="#lru-cache-for-browser39s-local-storage" id="lru-cache-for-browser39s-local-storage" style="color: inherit; text-decoration: none;">
+  <h1>LRU Cache for Browser&#39;s Local Storage</h1>
+</a>
+<p><a href="https://badge.fury.io/js/@cocalc%2Flocal-storage-lru"><img src="https://badge.fury.io/js/@cocalc%2Flocal-storage-lru.svg" alt="npm version"></a>
+<a href="https://github.com/sagemathinc/local-storage-lru/actions/workflows/node.js.yml"><img src="https://github.com/sagemathinc/local-storage-lru/actions/workflows/node.js.yml/badge.svg" alt="Node.js CI"></a>
+<img src="https://img.shields.io/badge/functions-100%25-brightgreen.svg?style=flat" alt="Functions">
+<img src="https://img.shields.io/badge/branches-91.94%25-brightgreen.svg?style=flat" alt="Branches"></p>
+
+<a href="#warning-this-is-an-experimental-implementation" id="warning-this-is-an-experimental-implementation" style="color: inherit; text-decoration: none;">
+  <h2>WARNING: this is an experimental implementation</h2>
+</a>
+
+<a href="#problem" id="problem" style="color: inherit; text-decoration: none;">
+  <h2>Problem</h2>
+</a>
+<p>Saving an increasing number of key/value pairs in <code>localStorage</code> causes it to fill up at some point.
+From that point on, adding/modifying throws an exception.</p>
+
+<a href="#solution" id="solution" style="color: inherit; text-decoration: none;">
+  <h2>Solution</h2>
+</a>
+<p>Keep track of last <code>n</code> recently accessed/modified keys.
+If an exception occurs,
+randomly remove a few keys which aren&#39;t in that list and also – optionally – only whitelisted ones.
+Then try again storing the new value.</p>
+
+<a href="#benefits" id="benefits" style="color: inherit; text-decoration: none;">
+  <h3>Benefits</h3>
+</a>
+<ul>
+<li>The entire overhead is <em>one</em> additional key/value pair storing the pointers to these LRU keys.</li>
+<li>The keys and values you try to store are not modified.</li>
+</ul>
+
+<a href="#design-goals" id="design-goals" style="color: inherit; text-decoration: none;">
+  <h2>Design Goals</h2>
+</a>
+<ul>
+<li><strong>robust</strong>: no exceptions are thrown (only if there is a problematic key)</li>
+<li><strong>universal</strong>: also supports storing objects, <code>Date</code>, <code>BigInt</code>, arrays etc..</li>
+<li><strong>backwards compatible</strong>: if you already store string values, they&#39;re not modified. You can even tell it to attempt parsing existing JSON values.</li>
+</ul>
+
+<a href="#usage" id="usage" style="color: inherit; text-decoration: none;">
+  <h2>Usage</h2>
+</a>
+<p>This is how to instantiate the wrapper class.</p>
+<p>Options:</p>
+<ul>
+<li><code>recentKey</code> (optional): the string of the key, under which the list of recently accessed keys is stored.</li>
+<li><code>maxSize</code> (optional): the maximum number of keys to keep in the list of recently used keys. A larger list reduces the chances of deleting an &quot;important&quot; key, but at the same time, overall more storage is used.</li>
+<li><code>isCandidate</code> (optional): a function that takes a key and returns <code>true</code> if the key is a candidate for deletion. By default, any key except for the <code>recentKey</code> is a candidate. Optional second argument is the array of all recent keys.</li>
+<li><code>fallback</code> (optional, default <code>false</code>): if <code>true</code>, <code>localStorage</code> is checked if it works. If not, data is stored in a mockup storage with limited space.</li>
+<li><code>serializer</code> (optional): by default <code>JSON.stringify</code>, but you can use your own.</li>
+<li><code>deserializer</code> (optional): counterpart to the above, by default <code>JSON.parse</code>.</li>
+<li><code>parseExistingJSON</code> (optional): if <code>true</code>, it tries to deserialize already existing JSON values.</li>
+<li><code>typePrefixes</code> (optional): prefixes to serialized values if they&#39;re not stored a strings – somehow, we have to mark values if they are a complex object...</li>
+<li><code>typePrefixDelimiter</code> (optional): string appended to each <code>typePrefix</code> to separate from the serialized value – default: <code>\0</code></li>
+</ul>
+<pre><code class="language-ts"><span class="hl-0">// simple:</span><br/><span class="hl-1">const</span><span class="hl-2"> </span><span class="hl-3">storage</span><span class="hl-2"> = </span><span class="hl-1">new</span><span class="hl-2"> </span><span class="hl-4">LocalStorageLRU</span><span class="hl-2">();</span><br/><br/><span class="hl-0">// with options:</span><br/><span class="hl-1">function</span><span class="hl-2"> </span><span class="hl-4">candidate</span><span class="hl-2">(</span><span class="hl-5">key</span><span class="hl-2">: </span><span class="hl-6">string</span><span class="hl-2">): </span><span class="hl-6">boolean</span><span class="hl-2"> {</span><br/><span class="hl-2">  </span><span class="hl-7">if</span><span class="hl-2"> (</span><span class="hl-5">key</span><span class="hl-2">.</span><span class="hl-4">startsWith</span><span class="hl-2">(</span><span class="hl-8">&#39;preserved-&#39;</span><span class="hl-2">)) {</span><br/><span class="hl-2">    </span><span class="hl-7">return</span><span class="hl-2"> </span><span class="hl-1">false</span><span class="hl-2">;</span><br/><span class="hl-2">  }</span><br/><span class="hl-2">  </span><span class="hl-7">return</span><span class="hl-2"> </span><span class="hl-1">true</span><span class="hl-2">;</span><br/><span class="hl-2">}</span><br/><br/><span class="hl-1">const</span><span class="hl-2"> </span><span class="hl-3">storage</span><span class="hl-2"> = </span><span class="hl-1">new</span><span class="hl-2"> </span><span class="hl-4">LocalStorageLRU</span><span class="hl-2">({</span><br/><span class="hl-2">  </span><span class="hl-5">recentKey:</span><span class="hl-2"> </span><span class="hl-3">RECENTLY_KEY</span><span class="hl-2">,</span><br/><span class="hl-2">  </span><span class="hl-5">maxSize:</span><span class="hl-2"> </span><span class="hl-3">RECENTLY_KEEP</span><span class="hl-2">,</span><br/><span class="hl-2">  </span><span class="hl-5">isCandidate:</span><span class="hl-2"> </span><span class="hl-5">candidate</span><span class="hl-2">,</span><br/><span class="hl-2">  </span><span class="hl-5">fallback:</span><span class="hl-2"> </span><span class="hl-1">true</span><span class="hl-2">,</span><br/><span class="hl-2">});</span>
+</code></pre>
+<pre><code class="language-ts"><span class="hl-0">// set/get/delete</span><br/><span class="hl-5">storage</span><span class="hl-2">.</span><span class="hl-4">set</span><span class="hl-2">(</span><span class="hl-8">&#39;foo&#39;</span><span class="hl-2">, </span><span class="hl-8">&#39;bar&#39;</span><span class="hl-2">);</span><br/><span class="hl-5">storage</span><span class="hl-2">.</span><span class="hl-4">get</span><span class="hl-2">(</span><span class="hl-8">&#39;foo&#39;</span><span class="hl-2">) == </span><span class="hl-8">&#39;bar&#39;</span><span class="hl-2">; </span><span class="hl-0">// true</span><br/><span class="hl-5">storage</span><span class="hl-2">.</span><span class="hl-4">delete</span><span class="hl-2">(</span><span class="hl-8">&#39;foo&#39;</span><span class="hl-2">);</span><br/><br/><span class="hl-0">// iterate</span><br/><span class="hl-5">storage</span><span class="hl-2">.</span><span class="hl-4">set</span><span class="hl-2">(</span><span class="hl-8">&#39;key1&#39;</span><span class="hl-2">, </span><span class="hl-8">&#39;1&#39;</span><span class="hl-2">);</span><br/><span class="hl-5">storage</span><span class="hl-2">.</span><span class="hl-4">set</span><span class="hl-2">(</span><span class="hl-8">&#39;key2&#39;</span><span class="hl-2">, </span><span class="hl-8">&#39;2&#39;</span><span class="hl-2">);</span><br/><span class="hl-5">storage</span><span class="hl-2">.</span><span class="hl-4">set</span><span class="hl-2">(</span><span class="hl-8">&#39;key3&#39;</span><span class="hl-2">, </span><span class="hl-8">&#39;3&#39;</span><span class="hl-2">);</span><br/><span class="hl-1">const</span><span class="hl-2"> </span><span class="hl-3">entries</span><span class="hl-2">: [</span><span class="hl-6">string</span><span class="hl-2">, </span><span class="hl-6">any</span><span class="hl-2">][] = [];</span><br/><span class="hl-7">for</span><span class="hl-2"> (</span><span class="hl-1">const</span><span class="hl-2"> [</span><span class="hl-3">k</span><span class="hl-2">, </span><span class="hl-3">v</span><span class="hl-2">] </span><span class="hl-1">of</span><span class="hl-2"> </span><span class="hl-5">storage</span><span class="hl-2">) {</span><br/><span class="hl-2">  </span><span class="hl-5">entries</span><span class="hl-2">.</span><span class="hl-4">push</span><span class="hl-2">([</span><span class="hl-5">k</span><span class="hl-2">, </span><span class="hl-5">v</span><span class="hl-2">]);</span><br/><span class="hl-2">}</span><br/><span class="hl-5">entries</span><span class="hl-2">; </span><span class="hl-0">// equals: [[ &#39;key1&#39;, &#39;1&#39; ], [ &#39;key2&#39;, &#39;2&#39; ], [ &#39;key3&#39;, &#39;3&#39; ]]</span>
+</code></pre>
+<p>For more, check out the <a href="__tests__/test-lru.ts">tests</a>.</p>
+
+<a href="#development" id="development" style="color: inherit; text-decoration: none;">
+  <h2>Development</h2>
+</a>
+<p>The setup follows this <a href="https://itnext.io/step-by-step-building-and-publishing-an-npm-typescript-package-44fe7164964c">step-by-step guide</a>.</p>
+
+<a href="#release" id="release" style="color: inherit; text-decoration: none;">
+  <h2>Release</h2>
+</a>
+<p>There are some hooks registered, see link above, to check for clean git tree, all tests passing and linting.</p>
+<pre><code class="language-bash"><span class="hl-2">npm version patch</span><br/><span class="hl-2">npm publish</span>
+</code></pre>
+
+<a href="#license" id="license" style="color: inherit; text-decoration: none;">
+  <h2>License</h2>
+</a>
+<p><a href="https://www.apache.org/licenses/LICENSE-2.0.html">Apache 2.0</a></p>
+</div></div><div class="col-4 col-menu menu-sticky-wrap menu-highlight"><nav class="tsd-navigation primary"><ul><li class="current"><a href="modules.html">Exports</a></li></ul></nav><nav class="tsd-navigation secondary menu-sticky"><ul><li class="tsd-kind-class"><a href="classes/LocalStorageLRU.html" class="tsd-kind-icon">Local<wbr/>StorageLRU</a></li><li class="tsd-kind-interface"><a href="interfaces/Props.html" class="tsd-kind-icon">Props</a></li><li class="tsd-kind-interface"><a href="interfaces/TypePrefixes.html" class="tsd-kind-icon">Type<wbr/>Prefixes</a></li></ul></nav></div></div></div><footer class="with-border-bottom"><div class="container"><h2>Legend</h2><div class="tsd-legend-group"><ul class="tsd-legend"><li class="tsd-kind-property tsd-parent-kind-interface"><span class="tsd-kind-icon">Property</span></li><li class="tsd-kind-method tsd-parent-kind-interface"><span class="tsd-kind-icon">Method</span></li></ul><ul class="tsd-legend"><li class="tsd-kind-constructor tsd-parent-kind-class"><span class="tsd-kind-icon">Constructor</span></li><li class="tsd-kind-method tsd-parent-kind-class"><span class="tsd-kind-icon">Method</span></li></ul><ul class="tsd-legend"><li class="tsd-kind-property tsd-parent-kind-class tsd-is-private"><span class="tsd-kind-icon">Private property</span></li><li class="tsd-kind-method tsd-parent-kind-class tsd-is-private"><span class="tsd-kind-icon">Private method</span></li></ul><ul class="tsd-legend"><li class="tsd-kind-method tsd-parent-kind-class tsd-is-static"><span class="tsd-kind-icon">Static method</span></li></ul></div><h2>Settings</h2><p>Theme <select id="theme"><option value="os">OS</option><option value="light">Light</option><option value="dark">Dark</option></select></p></div></footer><div class="container tsd-generator"><p>Generated using <a href="https://typedoc.org/" target="_blank">TypeDoc</a></p></div><div class="overlay"></div><script src="assets/main.js"></script></body></html>
