@@ -20,5 +20,9 @@
     "esModuleInterop": true /* Enables emit interoperability between CommonJS and ES Modules via creation of namespace objects for all imports. Implies 'allowSyntheticDefaultImports'. */
   },
   "include": ["src"],
-  "exclude": ["node_modules", "**/__tests__/*", "lib", "coverage"]
+  "exclude": ["node_modules", "**/__tests__/*", "lib", "coverage"],
+  "typedocOptions": {
+    "entryPoints": ["src/index.ts"],
+    "out": "docs"
+  }
 }

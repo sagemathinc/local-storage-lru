@@ -46,7 +46,7 @@ Options:
 - `typePrefixes` (optional): prefixes to serialized values if they're not stored a strings – somehow, we have to mark values if they are a complex object...
 - `typePrefixDelimiter` (optional): string appended to each `typePrefix` to separate from the serialized value – default: `\0`
 
-```{javascript}
+```ts
 // simple:
 const storage = new LocalStorageLRU();
 
@@ -66,7 +66,7 @@ const storage = new LocalStorageLRU({
 });
 ```
 
-```{javascript}
+```ts
 // set/get/delete
 storage.set('foo', 'bar');
 storage.get('foo') == 'bar'; // true
@@ -80,7 +80,7 @@ const entries: [string, any][] = [];
 for (const [k, v] of storage) {
   entries.push([k, v]);
 }
-entries // equals: [[ 'key1', '1' ], [ 'key2', '2' ], [ 'key3', '3' ]]
+entries; // equals: [[ 'key1', '1' ], [ 'key2', '2' ], [ 'key3', '3' ]]
 ```
 
 For more, check out the [tests](__tests__/test-lru.ts).
@@ -93,7 +93,7 @@ The setup follows this [step-by-step guide](https://itnext.io/step-by-step-build
 
 There are some hooks registered, see link above, to check for clean git tree, all tests passing and linting.
 
-```{bash}
+```bash
 npm version patch
 npm publish
 ```

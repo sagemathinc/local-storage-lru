@@ -328,6 +328,12 @@ export class LocalStorageLRU {
     }
   }
 
+  /**
+   * Return all keys in local storage, optionally sorted.
+   *
+   * @param {boolean} [sorted=false]
+   * @return {string[]}
+   */
   public keys(sorted = false): string[] {
     const keys = this.ls instanceof LocalStorageFallback ? this.ls.keys() : Object.keys(this.ls);
     const filteredKeys: string[] = keys.filter((el: string) => el !== this.recentKey);
@@ -360,6 +366,13 @@ export class LocalStorageLRU {
     return LocalStorageLRU.testLocalStorage(this.ls);
   }
 
+  /**
+   * Returns true, if we can store something in local storage at all.
+   * This is used for testing and during initialization.
+   *
+   * @static
+   * @param {Storage} ls
+   */
   public static testLocalStorage(ls: {
     getItem: (key: string) => string | null;
     setItem: (k: string, v: string) => void;
@@ -423,6 +436,19 @@ export class LocalStorageLRU {
     }
   }
 
+  /**
+   * Usage:
+   *
+   * ```ts
+   * const entries: [string, any][] = [];
+   * for (const [k, v] of storage) {
+   *    entries.push([k, v]);
+   * }
+   * entries; // equals: [[ 'key1', '1' ], [ 'key2', '2' ], ... ]
+   * ```
+   *
+   * @returns iterator over key/value pairs
+   */
   public *[Symbol.iterator](): IterableIterator<[string, string | object]> {
     for (const k of this.keys()) {
       if (k === this.recentKey) continue;

@@ -5,3 +5,4 @@
  */
 
 export { LocalStorageLRU } from './local-storage-lru';
+export { TypePrefixes, Props } from './types';
