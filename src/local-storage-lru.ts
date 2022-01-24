@@ -40,6 +40,11 @@ export class LocalStorageLRU {
   private readonly typePrefixDelimiter: string;
   private readonly parseExistingJSON: boolean;
 
+  /**
+   * You can tweak several details of the behavior of this class, check out {@link Props} for more information.
+   *
+   * By default, no tweaking is required.
+   */
   constructor(props?: Props) {
     this.maxSize = props?.maxSize ?? 64;
     this.isCandidate = props?.isCandidate;
