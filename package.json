@@ -31,7 +31,7 @@
   ],
   "author": "Sagemath, Inc.",
   "license": "APACHE-2.0",
-  "homepage": "https://github.com/sagemathinc/local-storage-lru#readme",
+  "homepage": "https://sagemathinc.github.io/local-storage-lru/",
   "devDependencies": {
     "@types/jest": "^27.4.0",
     "istanbul-badges-readme": "^1.8.1",
