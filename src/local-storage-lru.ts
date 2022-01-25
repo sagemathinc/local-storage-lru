@@ -463,4 +463,71 @@ export class LocalStorageLRU {
       yield [k, v];
     }
   }
+
+  /**
+   *  Set data in nested objects and merge with existing values
+   */
+  public setData(key: string, pathParam: string | string[], value: any): void {
+    const path = typeof pathParam === 'string' ? [pathParam] : pathParam;
+    const next = this.get(key) ?? {};
+    if (typeof next !== 'object') throw new Error(`localStorage: setData: ${key} is not an object`);
+    function setNested(val: any, path: string[]) {
+      if (path.length === 1) {
+        // if value is an object, we merge it with the existing value
+        if (typeof value === 'object') {
+          val[path[0]] = { ...val[path[0]], ...value };
+        } else {
+          val[path[0]] = value;
+        }
+      } else {
+        val[path[0]] = val[path[0]] ?? {};
+        setNested(val[path[0]], path.slice(1));
+      }
+    }
+    setNested(next, path);
+    this.set(key, next);
+  }
+
+  /**
+   *  Get data from a nested object
+   */
+  public getData(key: string, pathParam: string | string[]): any {
+    const path = typeof pathParam === 'string' ? [pathParam] : pathParam;
+    const next: any = this.get(key);
+    if (next == null) return null;
+    if (typeof next !== 'object') throw new Error(`localStorage: getData: ${key} is not an object`);
+    function getNested(val: any, path: string[]): any {
+      if (path.length === 1) {
+        return val[path[0]];
+      } else {
+        return getNested(next[path[0]], path.slice(1));
+      }
+    }
+    return getNested(next, path);
+  }
+
+  /**
+   * Delete a value or nested object from within a nested object at the given path.
+   * It returns the deleted object.
+   */
+  public deleteData(key: string, pathParam: string | string[]): any {
+    const path: string[] = typeof pathParam === 'string' ? [pathParam] : pathParam;
+    const next: any = this.get(key);
+    if (next == null) return null;
+    if (typeof next !== 'object') throw new Error(`localStorage: ${key} is not an object`);
+
+    function deleteNested(val: any, path: string[]) {
+      if (path.length === 1) {
+        const deleted = val[path[0]];
+        delete val[path[0]];
+        return deleted;
+      } else {
+        deleteNested(val[path[0]], path.slice(1));
+      }
+    }
+
+    const deleted = deleteNested(next, path);
+    this.set(key, next);
+    return deleted;
+  }
 }

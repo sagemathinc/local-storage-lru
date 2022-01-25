@@ -403,4 +403,28 @@ describe.each(modes)(`%s`, ({ fallback }) => {
     const t = type === 'int' ? '\x00\x04int\x00' : '\x00\x05float\x00';
     expect(LS.getLocalStorage().getItem(key)!.startsWith(t)).toBe(true);
   });
+
+  test(`${mode} deep object support`, () => {
+    LS.setData('foo', 'bar', 1.23);
+    expect(LS.getData('foo', 'bar')).toBe(1.23);
+    LS.setData('foo', 'baz', { a: 1, b: 2 });
+    expect(LS.getData('foo', 'baz')).toEqual({ a: 1, b: 2 });
+    LS.setData('baz', ['a', 'b', 'c'], 123);
+    expect(LS.get('baz')).toEqual({ a: { b: { c: 123 } } });
+    expect(LS.getData('baz', ['a', 'b'])).toEqual({ c: 123 });
+    LS.setData('foo', ['baz', 'a'], 333);
+    expect(LS.getData('foo', 'baz')).toEqual({ a: 333, b: 2 });
+    LS.setData('foo', ['delme'], 'delme');
+    expect(LS.getData('foo', ['delme'])).toBe('delme');
+    LS.deleteData('foo', 'delme');
+    expect(LS.get('foo')).toEqual({ bar: 1.23, baz: { a: 333, b: 2 } });
+    LS.deleteData('baz', ['a', 'b']);
+    expect(LS.get('baz')).toEqual({ a: {} });
+  });
+
+  test(`${mode} deep object merging`, () => {
+    LS.setData('foo', ['a', 'b'], { a: 1, b: 'two', d: 99 });
+    LS.setData('foo', ['a', 'b'], { a: 'one', c: 3 });
+    expect(LS.getData('foo', ['a', 'b'])).toEqual({ a: 'one', b: 'two', c: 3, d: 99 });
+  });
 });
