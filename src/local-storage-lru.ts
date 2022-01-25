@@ -471,17 +471,17 @@ export class LocalStorageLRU {
     const path = typeof pathParam === 'string' ? [pathParam] : pathParam;
     const next = this.get(key) ?? {};
     if (typeof next !== 'object') throw new Error(`localStorage: setData: ${key} is not an object`);
-    function setNested(val: any, path: string[]) {
-      if (path.length === 1) {
+    function setNested(val: any, pathNested: string[]) {
+      if (pathNested.length === 1) {
         // if value is an object, we merge it with the existing value
         if (typeof value === 'object') {
-          val[path[0]] = { ...val[path[0]], ...value };
+          val[pathNested[0]] = { ...val[pathNested[0]], ...value };
         } else {
-          val[path[0]] = value;
+          val[pathNested[0]] = value;
         }
       } else {
-        val[path[0]] = val[path[0]] ?? {};
-        setNested(val[path[0]], path.slice(1));
+        val[pathNested[0]] = val[pathNested[0]] ?? {};
+        setNested(val[pathNested[0]], pathNested.slice(1));
       }
     }
     setNested(next, path);
@@ -496,11 +496,11 @@ export class LocalStorageLRU {
     const next: any = this.get(key);
     if (next == null) return null;
     if (typeof next !== 'object') throw new Error(`localStorage: getData: ${key} is not an object`);
-    function getNested(val: any, path: string[]): any {
-      if (path.length === 1) {
-        return val[path[0]];
+    function getNested(val: any, pathNested: string[]): any {
+      if (pathNested.length === 1) {
+        return val[pathNested[0]];
       } else {
-        return getNested(next[path[0]], path.slice(1));
+        return getNested(next[pathNested[0]], pathNested.slice(1));
       }
     }
     return getNested(next, path);
@@ -516,13 +516,13 @@ export class LocalStorageLRU {
     if (next == null) return null;
     if (typeof next !== 'object') throw new Error(`localStorage: ${key} is not an object`);
 
-    function deleteNested(val: any, path: string[]) {
-      if (path.length === 1) {
-        const deleted = val[path[0]];
-        delete val[path[0]];
-        return deleted;
+    function deleteNested(val: any, pathNested: string[]) {
+      if (pathNested.length === 1) {
+        const del = val[pathNested[0]];
+        delete val[pathNested[0]];
+        return del;
       } else {
-        deleteNested(val[path[0]], path.slice(1));
+        deleteNested(val[pathNested[0]], pathNested.slice(1));
       }
     }
 

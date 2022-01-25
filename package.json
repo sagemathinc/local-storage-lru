@@ -7,7 +7,9 @@
     ".": "./lib/index.js"
   },
   "scripts": {
-    "test": "jest --config jestconfig.json && npm run make-badges",
+    "test": "npm run lint && npm run jest && npm run make-badges",
+    "test-ci": "npm run jest",
+    "jest": "jest --config jestconfig.json",
     "build": "tsc",
     "format": "prettier --write \"**/*.ts\" \"**/*.js\"",
     "lint": "tslint -p tsconfig.json",
