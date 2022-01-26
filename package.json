@@ -10,7 +10,8 @@
     "test": "npm run lint && npm run jest && npm run make-badges",
     "test-ci": "npm run jest",
     "jest": "jest --config jestconfig.json",
-    "build": "tsc",
+    "clean": "rm -rf ./lib/ ./docs/ ./coverage/",
+    "build": "npm run clean && tsc",
     "format": "prettier --write \"**/*.ts\" \"**/*.js\"",
     "lint": "tslint -p tsconfig.json",
     "prepare": "npm run build",
@@ -20,7 +21,7 @@
     "postversion": "git push && git push --tags",
     "make-badges": "istanbul-badges-readme",
     "docs-show": "xdg-open ./docs/index.html",
-    "docs": "npx typedoc"
+    "docs": "rm -rf ./docs/ && npx typedoc"
   },
   "repository": {
     "type": "git",
