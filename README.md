@@ -2,8 +2,6 @@
 
 [![npm version](https://badge.fury.io/js/@cocalc%2Flocal-storage-lru.svg)](https://badge.fury.io/js/@cocalc%2Flocal-storage-lru) ![npm](https://img.shields.io/npm/dw/@cocalc/local-storage-lru) &nbsp; [![Documentation Online](https://img.shields.io/badge/documentation-online-blue.svg)](https://sagemathinc.github.io/local-storage-lru/) &nbsp; [![Node.js CI](https://github.com/sagemathinc/local-storage-lru/actions/workflows/node.js.yml/badge.svg)](https://github.com/sagemathinc/local-storage-lru/actions/workflows/node.js.yml) ![Functions](https://img.shields.io/badge/functions-100%25-brightgreen.svg?style=flat) ![Branches](https://img.shields.io/badge/branches-90.94%25-brightgreen.svg?style=flat)
 
-## WARNING: this is an experimental implementation
-
 ## Problem
 
 Saving an increasing number of key/value pairs in `localStorage` causes it to fill up at some point.
