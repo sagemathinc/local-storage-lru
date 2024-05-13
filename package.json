@@ -1,5 +1,5 @@
 {
-  "name": "@cocalc/local-storage-lru",
+  "name": "@sleaze/local-storage-lru",
   "version": "2.4.3",
   "description": "Simple LRU cache for a browser's localStorage",
   "main": "./lib/index.js",
@@ -53,5 +53,8 @@
   ],
   "bugs": {
     "url": "https://github.com/sagemathinc/local-storage-lru/issues"
+  },
+  "dependencies": {
+    "node": "^18.20.2"
   }
 }
