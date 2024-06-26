@@ -214,12 +214,20 @@ describe.each(modes)(`%s`, ({ fallback }) => {
     LS.set('key456', '2');
     LS.set('other987', '3');
     LS.set('key789', '4');
+    LS.set('other_foo', '5');
+    LS.set('key99', '6');
+    LS.set('other/bar', '7');
+    LS.set('baz', '8');
     LS.deletePrefix('other');
     expect(LS.has('other987')).toBe(false);
+    expect(LS.has('other_foo')).toBe(false);
+    expect(LS.has('other/bar')).toBe(false);
     expect(LS.has('key123')).toBe(true);
+    expect(LS.has('key99')).toBe(true);
     expect(LS.get('other987')).toBe(null);
     expect(LS.get('key789')).toBe('4');
-    expect(LS.size()).toBe(3);
+    expect(LS.get('baz')).toBe('8');
+    expect(LS.size()).toBe(5);
   });
 
   test(`${mode} keys`, () => {
