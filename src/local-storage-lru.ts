@@ -432,13 +432,9 @@ export class LocalStorageLRU {
 
   /** Delete all keys with the given prefix */
   public deletePrefix(prefix: string): void {
-    for (let i = 0; i < this.ls.length; i++) {
-      const key = this.ls.key(i);
-      if (key == null) continue;
-      if (key.startsWith(prefix) && key !== this.recentKey) {
-        this.delete(key);
-      }
-    }
+    this.keys()
+      .filter((k) => k.startsWith(prefix) && k !== this.recentKey)
+      .forEach((k) => this.delete(k));
   }
 
   /**
